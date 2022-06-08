@@ -34,7 +34,9 @@ def init_settings(temp_dir: str) -> Options:
 
 
 if __name__ == "__main__":
-    # request = input('Введите поисковый запрос: ').strip()
+    request = input(
+        'Введите поисковый запрос формата (((H04L9)) OR (crypt)) assignee:raytheon language:ENGLISH: '
+    ).strip()
     dir_manager = MakeDirManager()
     temporary_dir = dir_manager.make_temp_browser_dir(directory=TEMP_DIR)
     options = init_settings(temp_dir=temporary_dir)
@@ -46,19 +48,19 @@ if __name__ == "__main__":
     writer = LinksFileWriter(directory=links_dir)
     reader = LinksFileReader()
     try:
-        # set_main_links = parser.collect_main_links()
-        # path_to_main_links = writer.write_links_to_txt_file(file_name=MAIN_TXT, data=set_main_links)
-        # time.sleep(10)
-        # main_links = reader.parse_txt_file(path_to_links=path_to_main_links)
-        # parser.set_links(links=main_links)
-        # set_inventors_links = parser.collect_inventors_links()
-        # path_to_inventors_links = writer.write_links_to_txt_file(file_name=INVENTORS_TXT, data=set_inventors_links)
-        # time.sleep(10)
-        # inventors_links = reader.parse_txt_file(path_to_links=path_to_inventors_links)
-        # parser.set_links(links=inventors_links)
-        # list_patents_links = parser.collect_patents_inventors_links()
-        # path_to_json_links = writer.write_links_to_json_file(file_name=INVENTORS_JSON, data=list_patents_links)
-        # time.sleep(10)
+        set_main_links = parser.collect_main_links()
+        path_to_main_links = writer.write_links_to_txt_file(file_name=MAIN_TXT, data=set_main_links)
+        time.sleep(10)
+        main_links = reader.parse_txt_file(path_to_links=path_to_main_links)
+        parser.set_links(links=main_links)
+        set_inventors_links = parser.collect_inventors_links()
+        path_to_inventors_links = writer.write_links_to_txt_file(file_name=INVENTORS_TXT, data=set_inventors_links)
+        time.sleep(10)
+        inventors_links = reader.parse_txt_file(path_to_links=path_to_inventors_links)
+        parser.set_links(links=inventors_links)
+        list_patents_links = parser.collect_patents_inventors_links()
+        path_to_json_links = writer.write_links_to_json_file(file_name=INVENTORS_JSON, data=list_patents_links)
+        time.sleep(10)
         patents_links = reader.parse_json_file(path_to_links="links/inventors.json")
         patents_links_len = len(patents_links)
         directory_name = dir_manager.make_result_dir(name=RESULT_DIR)
