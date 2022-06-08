@@ -41,7 +41,7 @@ class XpathRightPartElements(Enum):
     )
     inventors_link = (
         "//result-container/patent-result/div/div/div/div[1]/div[2]/"
-        "section/dl[contains(@class, 'important-people')]//dd//a"
+        "section/dl[contains(@class, 'important-people')]//dd/state-modifier"
     )
     country = (
         "//result-container/patent-result/div/div/div/div[1]/div[2]/section/header/p"

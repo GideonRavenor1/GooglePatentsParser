@@ -1,10 +1,9 @@
-import json
-import os
 import time
 from typing import Tuple
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
 
 from file_services import (
     XlsxFileWriter,
@@ -24,37 +23,39 @@ LINKS_DIR = DirTypeEnum.LINKS_DIR.value
 RESULT_DIR = DirTypeEnum.RESULT_DIR.value
 
 
-def init_settings(temp_dir: str) -> Options:
+def init_settings(temp_dir: str, path_to_driver: str) -> Tuple[Options, Service]:
     prefs = {
         "download.default_directory": temp_dir,
     }
     chrome_options = webdriver.ChromeOptions()
+    service = Service(executable_path=path_to_driver)
     chrome_options.add_experimental_option("prefs", prefs)
-    return chrome_options
+    return chrome_options, service
 
 
 if __name__ == "__main__":
+    path_to_driver = 'chromedriver'
     request = input(
-        'Введите поисковый запрос формата (((H04L9)) OR (crypt)) assignee:raytheon language:ENGLISH: '
+        'Введите поисковый запрос формата "(((H04L9)) OR (crypt)) assignee:raytheon language:ENGLISH" : '
     ).strip()
     dir_manager = MakeDirManager()
     temporary_dir = dir_manager.make_temp_browser_dir(directory=TEMP_DIR)
-    options = init_settings(temp_dir=temporary_dir)
-    chrome = webdriver.Chrome(options=options)
+    options, service = init_settings(temp_dir=temporary_dir, path_to_driver=path_to_driver)
+    chrome = webdriver.Chrome(options=options, service=service)
     parser = SeleniumMultiParser(
-        driver=chrome, tmp_dir=temporary_dir, request="request"
+        driver=chrome, tmp_dir=temporary_dir, request=request
     )
     links_dir = dir_manager.make_link_dir(name=LINKS_DIR)
     writer = LinksFileWriter(directory=links_dir)
     reader = LinksFileReader()
     try:
-        set_main_links = parser.collect_main_links()
-        path_to_main_links = writer.write_links_to_txt_file(file_name=MAIN_TXT, data=set_main_links)
+        list_main_links = parser.collect_main_links()
+        path_to_main_links = writer.write_links_to_txt_file(file_name=MAIN_TXT, data=list_main_links)
         time.sleep(10)
         main_links = reader.parse_txt_file(path_to_links=path_to_main_links)
         parser.set_links(links=main_links)
-        set_inventors_links = parser.collect_inventors_links()
-        path_to_inventors_links = writer.write_links_to_txt_file(file_name=INVENTORS_TXT, data=set_inventors_links)
+        list_inventors_links = parser.collect_inventors_links()
+        path_to_inventors_links = writer.write_links_to_txt_file(file_name=INVENTORS_TXT, data=list_inventors_links)
         time.sleep(10)
         inventors_links = reader.parse_txt_file(path_to_links=path_to_inventors_links)
         parser.set_links(links=inventors_links)

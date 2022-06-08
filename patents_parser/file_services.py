@@ -25,7 +25,7 @@ class LinksFileWriter:
     def __init__(self, directory: str) -> None:
         self.__directory = directory
 
-    def write_links_to_txt_file(self, data: Set, file_name: str) -> str:
+    def write_links_to_txt_file(self, data: List, file_name: str) -> str:
         Message.info_message("Запись ссылок в txt файл...")
         path = os.path.join(self.__directory, file_name)
         with open(path, "w", encoding="utf-8") as file:

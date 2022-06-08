@@ -138,3 +138,5 @@ dmypy.json
 cython_debug/
 /patents_parser/links/
 /patents_parser/result.zip
+/patents_parser/chromedriver
+chromedriver

@@ -19,6 +19,7 @@ class SeleniumParser:
     def __init__(self, driver: webdriver.Chrome, tmp_dir: str) -> None:
         self._driver = driver
         self._driver.implicitly_wait(time_to_wait=6)
+        self._driver.maximize_window()
         self._state = State()
         self._url_regex = re.compile(r"^(http|https)://([\w.]+/?)\S*$")
         self._links = []

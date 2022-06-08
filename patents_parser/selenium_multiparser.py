@@ -29,7 +29,7 @@ class SeleniumMultiParser(SeleniumParser):
         self._json_element = JsonDict()
         self._patents_links_list = []
 
-    def collect_main_links(self) -> Set:
+    def collect_main_links(self) -> List:
         self._follow_the_link(link=self.BASE_URL)
         self._fill_form(request=self._request)
         if not self._check_result():
@@ -39,7 +39,7 @@ class SeleniumMultiParser(SeleniumParser):
         self._main_links_list.clear()
         return valid_links
 
-    def collect_inventors_links(self) -> Set:
+    def collect_inventors_links(self) -> List:
         len_inventors_links = len(self._links)
         for link in self._links:
             Message.info_message(f"Осталось спарсить ссылок: {len_inventors_links}")
@@ -49,7 +49,7 @@ class SeleniumMultiParser(SeleniumParser):
             if len_inventors_links % 10 == 0:
                 time.sleep(random.randint(5, 10))
             len_inventors_links -= 1
-        valid_links = self._links_converter(data=self._inventors_links_list)
+        valid_links = self._links_converter(data=self._inventors_links_list, case_ignore=True)
         self._inventors_links_list.clear()
         return valid_links
 
@@ -73,7 +73,7 @@ class SeleniumMultiParser(SeleniumParser):
             self._json_element["links"] = []
             self._add_links_to_list(list_=self._json_element["links"])
             valid_links = self._links_converter(data=self._json_element["links"])
-            self._json_element["links"] = list(valid_links)
+            self._json_element["links"] = valid_links
             copy_element = self._json_element.copy()
             self._patents_links_list.append(copy_element)
         return self._patents_links_list
@@ -91,13 +91,16 @@ class SeleniumMultiParser(SeleniumParser):
         Message.info_message(f"Всего результатов на странице: {links_number}")
         total_added = 0
         while total_added < links_number:
+            time.sleep(1)
             links_elements = self._driver.find_elements(
                 by=By.XPATH, value=SearchItems.result_items.value
             )
             links_to_str = [
                 element.get_attribute("data-result") for element in links_elements
             ]
-            total_added += len(links_to_str)
+            len_links_to_str = len(links_to_str)
+            total_added += len_links_to_str
+            Message.info_message(f"Добавлено ссылок: {len_links_to_str}. Всего добавлено: {total_added}")
             list_.extend(links_to_str)
             self._click_to_next_button(xpath=SearchItems.next_button.value)
 
@@ -112,11 +115,18 @@ class SeleniumMultiParser(SeleniumParser):
         res_number = list(filter(lambda x: x.isdigit(), result.text.split()))
         return int(res_number[0])
 
-    def _links_converter(self, data: List) -> Set:
+    def _links_converter(self, data: List, case_ignore: bool = False) -> List:
         Message.info_message(f"Конвертация {len(data)} ссылок..")
-        set_link = {urljoin(base=self.BASE_URL, url=url) for url in data}
-        Message.info_message(f"Всего уникальных ссылок: {len(set_link)}")
-        return set_link
+        if case_ignore:
+            seen_links = {}
+            validate_links = [
+                seen_links.setdefault(link.lower(), link) for link in data if link.lower() not in seen_links
+            ]
+            list_link = [urljoin(base=self.BASE_URL, url=url) for url in validate_links]
+        else:
+            list_link = list({urljoin(base=self.BASE_URL, url=url) for url in data})
+        Message.info_message(f"Всего уникальных ссылок: {len(list_link)}")
+        return list_link
 
     def _check_result(self) -> bool:
         try:
@@ -150,12 +160,20 @@ class SeleniumMultiParser(SeleniumParser):
     def _get_inventors_links(self, people_section: List[WebElement], link: str) -> None:
         inventors = []
         for element in people_section:
-            inv_name = element.text.replace(",", "%2C").replace(" ", "+")
-            inventors.append(
-                f"?q={self._request_params}&inventor={inv_name}&oq={self._request_params}+inventor:({inv_name})"
-            )
+            if self._check_inventor_element(element=element):
+                inv_name = element.text.replace(",", "%2C").replace(" ", "+")
+                query = f"?q={self._request_params}&inventor={inv_name}&oq={self._request_params}+inventor:({inv_name})"
+                inventors.append(query)
+                Message.info_message(f"Сгенерированный Query-запрос: {query}")
         if not inventors:
-            Message.warning_message(f"Авторы не найдены. URL: {link}")
+            Message.warning_message(f"Авторы не найдены. Query-запросы не сгенерированы. URL: {link}")
         else:
             self._inventors_links_list.extend(inventors)
-            Message.success_message("Авторы добавлены в inventors_links_list.")
+            Message.success_message("Сгенерированные Query-запросы с авторами добавлены в буфер.")
+
+    @staticmethod
+    def _check_inventor_element(element: WebElement) -> bool:
+        type_act = element.get_attribute("act")
+        if 'inventor' in type_act:
+            return True
+        return False
