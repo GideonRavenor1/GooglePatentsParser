@@ -1,6 +1,6 @@
 import random
 import time
-from typing import Set, List
+from typing import List
 from urllib.parse import urljoin
 
 from selenium import webdriver
@@ -14,7 +14,7 @@ from selenium.webdriver.remote.webelement import WebElement
 from type_annotations import JsonDict
 from selenium_parser import SeleniumParser
 from logger import Message
-from enums import XpathRightPartElements, SearchItems
+from enums import XpathRightPartElements, SearchItems, UniqueNames
 
 
 class SeleniumMultiParser(SeleniumParser):
@@ -174,6 +174,6 @@ class SeleniumMultiParser(SeleniumParser):
     @staticmethod
     def _check_inventor_element(element: WebElement) -> bool:
         type_act = element.get_attribute("act")
-        if 'inventor' in type_act:
+        if UniqueNames.INVENTOR.value.lower() in type_act:
             return True
         return False
