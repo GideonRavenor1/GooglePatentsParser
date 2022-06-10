@@ -1,6 +1,6 @@
 import os
 import json
-from typing import List, Set, Tuple
+from typing import List, Tuple
 
 from xlsxwriter import Workbook
 
@@ -145,10 +145,15 @@ class XlsxFileWriter:
 
     @staticmethod
     def zipped_files(dir_name: str) -> None:
+        zip_file_name = f'{dir_name}.zip'
         Message.info_message("Упаковываю файлы в архив...")
-        wget = f"zip -r {dir_name}.zip {dir_name}"
+        wget = f"zip -r {zip_file_name} {dir_name}"
         os.system(wget)
         Message.success_message("Файлы упакованы в архив.")
+        Message.success_message(
+            f"Размер архива: {os.stat(zip_file_name).st_size // (1024 * 1024)} мб.\n"
+            f"Путь к файлу: {os.path.join(os.getcwd(), zip_file_name)}"
+        )
 
 
 class MakeDirManager:
