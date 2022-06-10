@@ -36,7 +36,7 @@ def init_settings(temp_dir: str, path_to_driver: str) -> Tuple[Options, Service]
 if __name__ == "__main__":
     path_to_chrome_driver = 'chromedriver'
     request = input(
-        'Введите поисковый запрос формата "(((H04L9)) OR (crypt)) assignee:raytheon language:ENGLISH" : '
+        'Введите поисковый запрос формата "(((H04L9)) OR (crypt)) assignee:raytheon language:ENGLISH)" : '
     ).strip()
     dir_manager = MakeDirManager()
     temporary_dir = dir_manager.make_temp_browser_dir(directory=TEMP_DIR)

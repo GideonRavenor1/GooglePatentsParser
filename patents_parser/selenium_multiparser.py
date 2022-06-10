@@ -162,7 +162,9 @@ class SeleniumMultiParser(SeleniumParser):
         for element in people_section:
             if self._check_inventor_element(element=element):
                 inv_name = element.text.replace(",", "%2C").replace(" ", "+")
-                query = f"?q={self._request_params}&inventor={inv_name}&oq={self._request_params}+inventor:({inv_name})"
+                query = (
+                    f"?q={self._request_params}&inventor={inv_name}&oq={self._request_params}+inventor:({inv_name}))"
+                )
                 inventors.append(query)
                 Message.info_message(f"Сгенерированный Query-запрос: {query}")
         if not inventors:

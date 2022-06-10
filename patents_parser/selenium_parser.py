@@ -172,16 +172,17 @@ class SeleniumParser:
             )
 
     def _find_classification_codes(self) -> None:
-        classification_elements = self._driver.find_elements(
-            by=By.XPATH, value=XpathIdElements.classification_elements.value
-        )
-        if not classification_elements:
+        try:
+            classification_element = self._driver.find_element(
+                by=By.XPATH, value=XpathIdElements.classification_elements.value
+            )
+        except NoSuchElementException:
             self._state["classification_codes"] = ""
             Message.warning_message(
                 f'Коды патентных классификаторов не найдены. URL: {self._state["link"]}'
             )
         else:
-            self._parse_classification_elements(elements=classification_elements)
+            self._parse_classification_elements(element=classification_element)
 
     def _find_abstract(self) -> None:
         try:
@@ -205,15 +206,11 @@ class SeleniumParser:
             self._state["country"] = ""
             Message.warning_message(f'Страна не найдена. URL: {self._state["link"]}')
 
-    def _parse_classification_elements(self, elements: List[WebElement]) -> None:
-        codes = []
-        for element in elements:
-            find_code_elements = element.find_elements(
-                by=By.XPATH, value=XpathIdElements.classification_element_codes.value
-            )
-            if not find_code_elements:
-                continue
-            codes.append(find_code_elements[-1].text)
+    def _parse_classification_elements(self, element: WebElement) -> None:
+        find_code_elements = element.find_elements(
+            by=By.XPATH, value=XpathIdElements.classification_element_codes.value
+        )
+        codes = [i.text for i in find_code_elements if i.text]
 
         if not codes:
             self._state["classification_codes"] = ""
