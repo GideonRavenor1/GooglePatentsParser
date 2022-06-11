@@ -36,14 +36,14 @@ def init_settings(temp_dir: str, path_to_driver: str) -> Tuple[Options, Service]
 if __name__ == "__main__":
     path_to_chrome_driver = 'chromedriver'
     request = input(
-        'Введите поисковый запрос формата "(((H04L9)) OR (crypt)) assignee:raytheon language:ENGLISH)" : '
+        'Введите поисковый запрос формата "((((H04L9)) OR (crypt))) assignee:raytheon country:US language:ENGLISH)": '
     ).strip()
     dir_manager = MakeDirManager()
     temporary_dir = dir_manager.make_temp_browser_dir(directory=TEMP_DIR)
     options, service = init_settings(temp_dir=temporary_dir, path_to_driver=path_to_chrome_driver)
     chrome = webdriver.Chrome(options=options, service=service)
     parser = SeleniumMultiParser(
-        driver=chrome, tmp_dir=temporary_dir, request=request
+        driver=chrome, tmp_dir=temporary_dir, request=request,
     )
     links_dir = dir_manager.make_link_dir(name=LINKS_DIR)
     writer = LinksFileWriter(directory=links_dir)

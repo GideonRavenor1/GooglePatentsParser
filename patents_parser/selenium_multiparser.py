@@ -88,6 +88,7 @@ class SeleniumMultiParser(SeleniumParser):
 
     def _add_links_to_list(self, list_: List) -> None:
         links_number = self._find_total_items_result()
+        self._add_more_result_per_page()
         Message.info_message(f"Всего результатов на странице: {links_number}")
         total_added = 0
         while total_added < links_number:
@@ -114,6 +115,12 @@ class SeleniumMultiParser(SeleniumParser):
             result = "0"
         res_number = list(filter(lambda x: x.isdigit(), result.text.split()))
         return int(res_number[0])
+
+    def _add_more_result_per_page(self) -> None:
+        more_result_button = self._driver.find_element(by=By.XPATH, value=SearchItems.result_in_page_button.value)
+        self._driver.execute_script("arguments[0].click();", more_result_button)
+        max_result_button = self._driver.find_element(by=By.XPATH, value=SearchItems.one_hundred_results_per_page.value)
+        self._driver.execute_script("arguments[0].click();", max_result_button)
 
     def _links_converter(self, data: List, case_ignore: bool = False) -> List:
         Message.info_message(f"Конвертация {len(data)} ссылок..")

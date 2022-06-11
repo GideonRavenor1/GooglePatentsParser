@@ -60,6 +60,11 @@ class XpathRightPartElements(Enum):
 
 
 class SearchItems(Enum):
+    result_in_page_button = (
+        "//search-results/search-ui/div/div/div[2]/div/div/div[1]/div[2]/div[2]"
+        "/span[2]/span[4]/dropdown-menu/span/iron-icon[1]"
+    )
+    one_hundred_results_per_page = "//iron-dropdown//div[text()='100']"
     search_form = "//input[@id='searchInput']"
     num_result = "//span[@id='numResultsLabel']"
     result_items = (
