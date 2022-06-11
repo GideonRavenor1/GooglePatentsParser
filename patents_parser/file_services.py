@@ -28,7 +28,7 @@ class LinksFileWriter:
     def write_links_to_txt_file(self, data: List, file_name: str) -> str:
         Message.info_message("Запись ссылок в txt файл...")
         path = os.path.join(self.__directory, file_name)
-        with open(path, "a", encoding="utf-8") as file:
+        with open(path, "w", encoding="utf-8") as file:
             file.write("\n".join(data))
         Message.success_message(
             f"Ссылки успешно записаны в txt файл.\nПуть к файлу: {path}"
