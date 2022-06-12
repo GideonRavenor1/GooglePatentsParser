@@ -34,7 +34,7 @@ class SeleniumMultiParser(SeleniumParser):
         self._fill_form(request=self._request)
         if not self._check_result():
             raise ValueError("Ошибка. Результатов по введённому запросу не найдено")
-        self._add_links_to_list(list_=self._main_links_list)
+        self._add_links_to_list(list_=self._main_links_list, all_result=True)
         valid_links = self._links_converter(data=self._main_links_list)
         self._main_links_list.clear()
         return valid_links
@@ -86,9 +86,10 @@ class SeleniumMultiParser(SeleniumParser):
         form.send_keys(Keys.ENTER)
         Message.info_message("Ввод запроса в форму...")
 
-    def _add_links_to_list(self, list_: List) -> None:
+    def _add_links_to_list(self, list_: List, all_result: bool = False) -> None:
         links_number = self._find_total_items_result()
-        self._add_more_result_per_page()
+        if all_result:
+            self._add_more_result_per_page()
         Message.info_message(f"Всего результатов на странице: {links_number}")
         total_added = 0
         while total_added < links_number:
