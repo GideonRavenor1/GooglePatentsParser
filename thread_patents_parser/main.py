@@ -1,6 +1,7 @@
 import sys
 import threading
 import time
+from datetime import datetime
 from typing import List, Callable
 
 from general_classes.enums import DirTypeEnum, FileTypeEnum
@@ -43,6 +44,7 @@ if __name__ == '__main__':
     request = input(
         'Введите поисковый запрос формата "((((H04L9)) OR (crypt))) assignee:raytheon country:US language:ENGLISH)": '
     ).strip()
+    start_time = datetime.now()
     request_params = request.split("assignee")[0].strip().replace(" ", "+")
     dir_manager = MakeDirManager()
     try:
@@ -81,10 +83,13 @@ if __name__ == '__main__':
         patents_links = LinksFileReader.parse_json_file(path_to_links='links/inventors.json')
         result_dir_name = dir_manager.make_result_dir(name=RESULT_DIR)
         execute_threading_command(collect_patent, patents_links, path_to_chrome_driver, temporary_dir, result_dir_name)
+
         XlsxFileWriter.zipped_files(dir_name=RESULT_DIR)
     except (FileNotFoundError, KeyError, IndexError, TypeError) as Error:
         Message.error_message(f"XXX Ошибка в работе программы. Ошибка: {Error}. XXX")
     finally:
+        execution_time = datetime.now() - start_time
+        Message.info_message(f"Время выполнения: {execution_time}")
         Message.success_message(
             "============== Завершение работы программы. =============="
         )

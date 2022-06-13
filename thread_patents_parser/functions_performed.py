@@ -11,10 +11,9 @@ from general_classes.logger import Message
 from thread_patents_parser.file_services import LinksFileWriter
 from thread_patents_parser.inventors_links_parser import SeleniumInventorsLinksParser
 from thread_patents_parser.main_links_parser import SeleniumMainLinksParser
-from thread_patents_parser.patents_links_parser import SeleniumPatentsInventorsLinksParser, SeleniumPatentsParser
+from thread_patents_parser.patents_links_parser import SeleniumPatentsInventorsLinksParser, SeleniumPatentsParser, LOCK
 
 RESULT_ARRAY = []
-LOCK = threading.Lock()
 
 
 def validate_urls(array: List) -> List:

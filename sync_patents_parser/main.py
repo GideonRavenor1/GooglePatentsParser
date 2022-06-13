@@ -1,4 +1,5 @@
 import time
+from datetime import datetime
 from typing import Tuple
 
 from selenium import webdriver
@@ -34,6 +35,7 @@ if __name__ == "__main__":
     request = input(
         'Введите поисковый запрос формата "((((H04L9)) OR (crypt))) assignee:raytheon country:US language:ENGLISH)": '
     ).strip()
+    start_time = datetime.now()
     dir_manager = MakeDirManager()
     temporary_dir = dir_manager.make_temp_browser_dir(directory=TEMP_DIR)
     options, service = init_settings(temp_dir=temporary_dir, path_to_driver=path_to_chrome_driver)
@@ -48,16 +50,19 @@ if __name__ == "__main__":
         list_main_links = parser.collect_main_links()
         path_to_main_links = writer.write_links_to_txt_file(file_name=MAIN_TXT, data=list_main_links)
         time.sleep(10)
+
         main_links = reader.parse_txt_file(path_to_links=path_to_main_links)
         parser.set_links(links=main_links)
         list_inventors_links = parser.collect_inventors_links()
         path_to_inventors_links = writer.write_links_to_txt_file(file_name=INVENTORS_TXT, data=list_inventors_links)
         time.sleep(10)
+
         inventors_links = reader.parse_txt_file(path_to_links=path_to_inventors_links)
         parser.set_links(links=inventors_links)
         list_patents_links = parser.collect_patents_inventors_links()
         path_to_json_links = writer.write_links_to_json_file(file_name=INVENTORS_JSON, data=list_patents_links)
         time.sleep(10)
+
         patents_links = reader.parse_json_file(path_to_links=path_to_json_links)
         patents_links_len = len(patents_links)
         directory_name = dir_manager.make_result_dir(name=RESULT_DIR)
@@ -75,10 +80,13 @@ if __name__ == "__main__":
             writer = XlsxFileWriter(directory=dir_author, state=state)
             writer.execute_write()
             patents_links_len -= 1
+
         writer.zipped_files(dir_name=RESULT_DIR)
     except FileExistsError as Error:
         Message.error_message(f"XXX Ошибка в работе программы. Ошибка: {Error}. XXX")
     finally:
+        execution_time = datetime.now() - start_time
+        Message.info_message(f"Время выполнения: {execution_time}")
         parser.close_browser()
         Message.success_message(
             "============== Завершение работы программы. =============="
