@@ -4,17 +4,17 @@ from typing import List
 from urllib.parse import urljoin
 
 from selenium import webdriver
+from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
-from selenium.common.exceptions import NoSuchElementException, TimeoutException
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.remote.webelement import WebElement
+from selenium.webdriver.support import expected_conditions as ec
+from selenium.webdriver.support.ui import WebDriverWait
 
-from type_annotations import JsonDict
+from general_classes.enums import XpathRightPartElements, SearchItems, UniqueNames
+from general_classes.logger import Message
+from general_classes.type_annotations import JsonDict
 from selenium_parser import SeleniumParser
-from logger import Message
-from enums import XpathRightPartElements, SearchItems, UniqueNames
 
 
 class SeleniumMultiParser(SeleniumParser):

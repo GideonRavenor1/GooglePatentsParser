@@ -5,15 +5,11 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 
-from file_services import (
-    XlsxFileWriter,
-    LinksFileWriter,
-    LinksFileReader,
-    MakeDirManager,
-)
-from logger import Message
-from selenium_multiparser import SeleniumMultiParser
-from enums import DirTypeEnum, FileTypeEnum
+from general_classes.enums import DirTypeEnum, FileTypeEnum
+from general_classes.file_services import MakeDirManager, XlsxFileWriter
+from general_classes.logger import Message
+from sync_patents_parser.file_services import LinksFileWriter, LinksFileReader
+from sync_patents_parser.selenium_multiparser import SeleniumMultiParser
 
 MAIN_TXT = FileTypeEnum.MAIN_TXT.value
 INVENTORS_TXT = FileTypeEnum.INVENTORS_TXT.value
@@ -34,7 +30,7 @@ def init_settings(temp_dir: str, path_to_driver: str) -> Tuple[Options, Service]
 
 
 if __name__ == "__main__":
-    path_to_chrome_driver = 'chromedriver'
+    path_to_chrome_driver = '../thread_patents_parser/chromedriver'
     request = input(
         'Введите поисковый запрос формата "((((H04L9)) OR (crypt))) assignee:raytheon country:US language:ENGLISH)": '
     ).strip()

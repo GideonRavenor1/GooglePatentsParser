@@ -1,4 +1,4 @@
-/patents_parser/result/
+/sync_patents_parser/result/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -136,7 +136,9 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
-/patents_parser/links/
-/patents_parser/result.zip
-/patents_parser/chromedriver
-chromedriver
+/sync_patents_parser/links/
+/sync_patents_parser/result.zip
+/sync_patents_parser/chromedriver
+/thread_patents_parser/chromedriver
+/thread_patents_parser/links/
+/thread_patents_parser/result.zip
