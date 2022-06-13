@@ -5,18 +5,6 @@ from typing import List
 from general_classes.logger import Message
 
 
-class LinksFileReader:
-    @staticmethod
-    def parse_txt_file(path_to_links: str) -> List:
-        with open(path_to_links, "r") as file:
-            return list(map(str.strip, file.readlines()))
-
-    @staticmethod
-    def parse_json_file(path_to_links: str) -> List:
-        with open(path_to_links, "r", encoding="utf-8") as file:
-            return json.load(file)
-
-
 class LinksFileWriter:
     def __init__(self, directory: str) -> None:
         self.__directory = directory

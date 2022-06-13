@@ -1,3 +1,4 @@
+import json
 import os
 from typing import Tuple, List
 
@@ -6,6 +7,18 @@ from xlsxwriter import Workbook
 from general_classes.enums import PatentsColumnName, MetaDataColumnName, PersonColumnName
 from general_classes.logger import Message
 from general_classes.type_annotations import State
+
+
+class LinksFileReader:
+    @staticmethod
+    def parse_txt_file(path_to_links: str) -> List:
+        with open(path_to_links, "r") as file:
+            return list(map(str.strip, file.readlines()))
+
+    @staticmethod
+    def parse_json_file(path_to_links: str) -> List:
+        with open(path_to_links, "r", encoding="utf-8") as file:
+            return json.load(file)
 
 
 class XlsxFileWriter:

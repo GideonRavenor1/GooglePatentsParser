@@ -6,9 +6,9 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 
 from general_classes.enums import DirTypeEnum, FileTypeEnum
-from general_classes.file_services import MakeDirManager, XlsxFileWriter
+from general_classes.file_services import MakeDirManager, XlsxFileWriter, LinksFileReader
 from general_classes.logger import Message
-from sync_patents_parser.file_services import LinksFileWriter, LinksFileReader
+from sync_patents_parser.file_services import LinksFileWriter
 from sync_patents_parser.selenium_multiparser import SeleniumMultiParser
 
 MAIN_TXT = FileTypeEnum.MAIN_TXT.value

@@ -4,9 +4,9 @@ import time
 from typing import List, Callable
 
 from general_classes.enums import DirTypeEnum, FileTypeEnum
-from general_classes.file_services import MakeDirManager, XlsxFileWriter
+from general_classes.file_services import MakeDirManager, XlsxFileWriter, LinksFileReader
 from general_classes.logger import Message
-from thread_patents_parser.file_services import LinksFileWriter, LinksFileReader
+from thread_patents_parser.file_services import LinksFileWriter
 from thread_patents_parser.functions_performed import (
     divide_into_parts, RESULT_ARRAY, validate_urls, collect_inventors_links,
     collect_patents_inventors_links, collect_main_links, collect_patent,
