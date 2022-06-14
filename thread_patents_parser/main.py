@@ -56,6 +56,7 @@ if __name__ == '__main__':
     if not classifications_code:
         Message.error_message(f"XXX Неверный формат поискового запроса. XXX")
         sys.exit()
+
     threads_count = input(f'Введите желаемое количество потоков(по умолчанию {DEFAULT_THREADS_COUNT}): ')
     DEFAULT_THREADS_COUNT = int(threads_count) if threads_count.isdigit() else DEFAULT_THREADS_COUNT
     start_time = datetime.now()
