@@ -51,9 +51,10 @@ if __name__ == "__main__":
         Message.error_message(f"XXX Неверный формат поискового запроса. XXX")
         sys.exit()
 
+    start_time = datetime.now()
+
     valid_classifications_code = classifications_code.group(0)
     Message.info_message(f'Код классификатора: {valid_classifications_code}')
-    start_time = datetime.now()
     dir_manager = MakeDirManager()
     temporary_dir = dir_manager.make_temp_browser_dir(directory=TEMP_DIR)
     options, service = init_settings(temp_dir=temporary_dir, path_to_driver=path_to_chrome_driver)
@@ -70,6 +71,7 @@ if __name__ == "__main__":
     links_dir = dir_manager.make_link_dir(name=LINKS_DIR)
     writer = LinksFileWriter(directory=links_dir)
     reader = LinksFileReader()
+
     try:
         list_main_links = parser.collect_main_links()
         path_to_main_links = writer.write_links_to_txt_file(file_name=MAIN_TXT, data=list_main_links)

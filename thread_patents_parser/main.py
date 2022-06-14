@@ -59,12 +59,15 @@ if __name__ == '__main__':
         sys.exit()
 
     threads_count = input(f'Введите желаемое количество потоков(по умолчанию {DEFAULT_THREADS_COUNT}): ')
+
+    start_time = datetime.now()
+
     DEFAULT_THREADS_COUNT = int(threads_count) if threads_count.isdigit() else DEFAULT_THREADS_COUNT
     DEFAULT_KEYWORD_COUNT = int(min_keyword_count) if min_keyword_count.isdigit() else DEFAULT_KEYWORD_COUNT
-    start_time = datetime.now()
     valid_classifications_code = classifications_code.group(0)
     Message.info_message(f'Код классификатора: {valid_classifications_code}')
     dir_manager = MakeDirManager()
+
     try:
         links_dir = dir_manager.make_link_dir(name=LINKS_DIR)
         temporary_dir = dir_manager.make_temp_browser_dir(directory=TEMP_DIR)
