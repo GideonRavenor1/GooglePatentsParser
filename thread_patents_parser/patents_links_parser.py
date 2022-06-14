@@ -134,7 +134,7 @@ class SeleniumPatentsParser(SeleniumBaseParser):
             by=By.XPATH, value=XpathIdElements.classification_element_codes.value
         )
         codes = [i.text for i in find_code_elements if i.text]
-
+        self._validate_patent(list_of_code=codes)
         if not codes:
             self._state["classification_codes"] = ""
             Message.warning_message(
@@ -149,7 +149,7 @@ class SeleniumPatentsParser(SeleniumBaseParser):
         check_valid_code = [True if self._valid_classifications_code in code else False for code in list_of_code]
         if any(check_valid_code):
             Message.success_message(
-                f"Патент прошел проверку. Найден ключевой классификатор: {self._valid_classifications_code}"
+                f"[{self._thread_name}] Патент прошел проверку. Найден ключевой классификатор: {self._valid_classifications_code}"
             )
             ...
         else:
@@ -158,11 +158,11 @@ class SeleniumPatentsParser(SeleniumBaseParser):
             )
             html = self._driver.find_element(by=By.TAG_NAME, value='html').text
             count_keywords = len(re.findall(self._keyword, html, flags=re.IGNORECASE))
-            valid_flag = count_keywords >= 10
+            valid_flag = count_keywords >= self._min_keyword_count
             if not valid_flag:
                 Message.warning_message(
                     f'[{self._thread_name}] Недостаточно ключевых слов в патенте. Найдено: {count_keywords}. '
-                    f'Мин.значение: {self._min_keyword_count}.'
+                    f'Мин.значение: {self._min_keyword_count}. '
                     f'Патент записан не будет. URL: {self._state["link"]}'
                 )
                 raise ValueError

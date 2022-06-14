@@ -1,3 +1,4 @@
+import os
 import re
 import sys
 import threading
@@ -59,6 +60,7 @@ if __name__ == '__main__':
 
     threads_count = input(f'Введите желаемое количество потоков(по умолчанию {DEFAULT_THREADS_COUNT}): ')
     DEFAULT_THREADS_COUNT = int(threads_count) if threads_count.isdigit() else DEFAULT_THREADS_COUNT
+    DEFAULT_KEYWORD_COUNT = int(min_keyword_count) if min_keyword_count.isdigit() else DEFAULT_KEYWORD_COUNT
     start_time = datetime.now()
     valid_classifications_code = classifications_code.group(0)
     Message.info_message(f'Код классификатора: {valid_classifications_code}')
@@ -96,7 +98,7 @@ if __name__ == '__main__':
         RESULT_ARRAY.clear()
         time.sleep(10)
 
-        patents_links = LinksFileReader.parse_json_file(path_to_links='links/inventors.json')
+        patents_links = LinksFileReader.parse_json_file(path_to_links=path_to_json_links)
         result_dir_name = dir_manager.make_result_dir(name=RESULT_DIR)
         execute_threading_command(
             collect_patent,
@@ -106,9 +108,11 @@ if __name__ == '__main__':
             result_dir_name,
             valid_classifications_code,
             keyword,
-            min_keyword_count,
+            DEFAULT_KEYWORD_COUNT,
         )
 
+        XlsxFileWriter.delete_empty_directory(dir_name=RESULT_DIR)
+        time.sleep(5)
         XlsxFileWriter.zipped_files(dir_name=RESULT_DIR)
     except (FileNotFoundError, KeyError, IndexError, TypeError) as Error:
         Message.error_message(f"XXX Ошибка в работе программы. Ошибка: {Error}. XXX")

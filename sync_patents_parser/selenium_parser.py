@@ -125,11 +125,11 @@ class SeleniumParser:
             Message.warning_message(f"Не найден ключевой классификатор: {self._valid_classifications_code}")
             html = self._driver.find_element(by=By.TAG_NAME, value='html').text
             count_keywords = len(re.findall(self._keyword, html, flags=re.IGNORECASE))
-            valid_flag = count_keywords >= 10
+            valid_flag = count_keywords >= self._min_keyword_count
             if not valid_flag:
                 Message.warning_message(
                     f'Недостаточно ключевых слов в патенте. Найдено: {count_keywords}. '
-                    f'Мин.значение: {self._min_keyword_count}.'
+                    f'Мин.значение: {self._min_keyword_count}. '
                     f'Патент записан не будет. URL: {self._state["link"]}'
                 )
                 raise ValueError

@@ -43,6 +43,7 @@ if __name__ == "__main__":
     min_keyword_count = input(
         f'Введите мин.количество ключевых слов на странице(по умолчанию {DEFAULT_KEYWORD_COUNT}): '
     )
+    DEFAULT_KEYWORD_COUNT = int(min_keyword_count) if min_keyword_count.isdigit() else DEFAULT_KEYWORD_COUNT
     request_params = request.split("assignee")[0].strip().replace(" ", "+")
     classifications_code = re.search(r'[^(][a-zA-Z\d]+[^)]', request_params)
 
@@ -63,7 +64,7 @@ if __name__ == "__main__":
         request=request,
         request_params=request_params,
         keyword=keyword,
-        min_keyword_count=int(min_keyword_count) if min_keyword_count.isdigit() else DEFAULT_KEYWORD_COUNT,
+        min_keyword_count=DEFAULT_KEYWORD_COUNT,
         valid_classifications_code=valid_classifications_code,
     )
     links_dir = dir_manager.make_link_dir(name=LINKS_DIR)
@@ -104,6 +105,8 @@ if __name__ == "__main__":
             writer.execute_write()
             patents_links_len -= 1
 
+        writer.delete_empty_directory(dir_name=RESULT_DIR)
+        time.sleep(5)
         writer.zipped_files(dir_name=RESULT_DIR)
     except FileExistsError as Error:
         Message.error_message(f"XXX Ошибка в работе программы. Ошибка: {Error}. XXX")

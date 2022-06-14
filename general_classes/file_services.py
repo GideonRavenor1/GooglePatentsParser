@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 from typing import Tuple, List
 
 from xlsxwriter import Workbook
@@ -120,15 +121,34 @@ class XlsxFileWriter:
 
     @staticmethod
     def zipped_files(dir_name: str) -> None:
-        zip_file_name = f'{dir_name}.zip'
-        Message.info_message("Упаковываю файлы в архив...")
-        wget = f"zip -r {zip_file_name} {dir_name}"
-        os.system(wget)
-        Message.success_message("Файлы упакованы в архив.")
-        Message.success_message(
-            f"Размер архива: {os.stat(zip_file_name).st_size // (1024 * 1024)} мб.\n"
-            f"Путь к файлу: {os.path.join(os.getcwd(), zip_file_name)}"
-        )
+        if not os.listdir(f"./{dir_name}"):
+            Message.warning_message(f"Директория {dir_name} пуста. Архивация невозможна")
+        else:
+            zip_file_name = f"{dir_name}.zip"
+            Message.info_message("Упаковываю файлы в архив...")
+            wget = f"zip -r {zip_file_name} {dir_name}"
+            os.system(wget)
+            Message.success_message("Файлы упакованы в архив.")
+            Message.success_message(
+                f"Размер архива: {os.stat(zip_file_name).st_size // (1024 * 1024)} мб.\n"
+                f"Путь к файлу: {os.path.join(os.getcwd(), zip_file_name)}"
+            )
+
+    @staticmethod
+    def delete_empty_directory(dir_name: str) -> None:
+        directories = os.listdir(f"./{dir_name}")
+        Message.info_message(f"Всего уникальных авторов: {len(directories)}")
+        Message.info_message("Поиск пустых директорий...")
+        empty_dirs = []
+        for ref, source, files in os.walk(f"./{dir_name}"):
+            if not files and not source and ref != ".":
+                empty_dirs.append(ref)
+
+        len_empty_dirs = len(empty_dirs)
+        Message.warning_message(f"Найдено пустых директорий: {len_empty_dirs}")
+        if len_empty_dirs:
+            [shutil.rmtree(directory.rsplit('/', maxsplit=1)[0]) for directory in empty_dirs]
+        Message.success_message("Пустые директории успешно удалены.")
 
 
 class MakeDirManager:
