@@ -87,7 +87,7 @@ if __name__ == '__main__':
         RESULT_ARRAY.clear()
         time.sleep(10)
 
-        inventors_links = LinksFileReader.parse_txt_file(path_to_links='links/inventors.txt')
+        inventors_links = LinksFileReader.parse_txt_file(path_to_links=path_to_inventors_links)
         execute_threading_command(collect_patents_inventors_links, inventors_links, path_to_chrome_driver)
         path_to_json_links = LinksFileWriter.write_links_to_json_file(
             file_name=INVENTORS_JSON,
