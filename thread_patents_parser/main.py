@@ -20,13 +20,13 @@ TEMP_DIR = DirTypeEnum.TEMP_DIR.value
 LINKS_DIR = DirTypeEnum.LINKS_DIR.value
 RESULT_DIR = DirTypeEnum.RESULT_DIR.value
 
-THREAD_COUNT = 8
+DEFAULT_THREADS_COUNT = 8
 
 
 def execute_threading_command(target_func: Callable, links: List,  *args) -> None:
-    parts = divide_into_parts(array=links, parts=THREAD_COUNT)
+    parts = divide_into_parts(array=links, parts=DEFAULT_THREADS_COUNT)
     threads = []
-    for number in range(THREAD_COUNT):
+    for number in range(DEFAULT_THREADS_COUNT):
         thread = threading.Thread(
             target=target_func,
             args=(parts[number], *args),
@@ -34,7 +34,7 @@ def execute_threading_command(target_func: Callable, links: List,  *args) -> Non
         )
         thread.start()
         threads.append(thread)
-    Message.info_message(f'Создание {THREAD_COUNT} потоков...')
+    Message.info_message(f'Создание {DEFAULT_THREADS_COUNT} потоков...')
     for thread in threads:
         thread.join()
 
@@ -44,6 +44,8 @@ if __name__ == '__main__':
     request = input(
         'Введите поисковый запрос формата "((((H04L9)) OR (crypt))) assignee:raytheon country:US language:ENGLISH)": '
     ).strip()
+    threads_count = input(f'Введите желаемое количество потоков(по умолчанию {DEFAULT_THREADS_COUNT}): ')
+    DEFAULT_THREADS_COUNT = int(threads_count) if threads_count.isdigit() else DEFAULT_THREADS_COUNT
     start_time = datetime.now()
     request_params = request.split("assignee")[0].strip().replace(" ", "+")
     dir_manager = MakeDirManager()
