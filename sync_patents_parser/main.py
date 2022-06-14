@@ -1,3 +1,5 @@
+import re
+import sys
 import time
 from datetime import datetime
 from typing import Tuple
@@ -19,6 +21,8 @@ TEMP_DIR = DirTypeEnum.TEMP_DIR.value
 LINKS_DIR = DirTypeEnum.LINKS_DIR.value
 RESULT_DIR = DirTypeEnum.RESULT_DIR.value
 
+DEFAULT_KEYWORD_COUNT = 10
+
 
 def init_settings(temp_dir: str, path_to_driver: str) -> Tuple[Options, Service]:
     prefs = {
@@ -31,17 +35,36 @@ def init_settings(temp_dir: str, path_to_driver: str) -> Tuple[Options, Service]
 
 
 if __name__ == "__main__":
-    path_to_chrome_driver = '../thread_patents_parser/chromedriver'
+    path_to_chrome_driver = 'chromedriver'
     request = input(
         'Введите поисковый запрос формата "((((H04L9)) OR (crypt))) assignee:raytheon country:US language:ENGLISH)": '
     ).strip()
+    keyword = input('Введите ключевое слово для поиска на странице: ')
+    min_keyword_count = input(
+        f'Введите мин.количество ключевых слов на странице(по умолчанию {DEFAULT_KEYWORD_COUNT}): '
+    )
+    request_params = request.split("assignee")[0].strip().replace(" ", "+")
+    classifications_code = re.search(r'[^(][a-zA-Z\d]+[^)]', request_params)
+
+    if not classifications_code:
+        Message.error_message(f"XXX Неверный формат поискового запроса. XXX")
+        sys.exit()
+
+    valid_classifications_code = classifications_code.group(0)
+    Message.info_message(f'Код классификатора: {valid_classifications_code}')
     start_time = datetime.now()
     dir_manager = MakeDirManager()
     temporary_dir = dir_manager.make_temp_browser_dir(directory=TEMP_DIR)
     options, service = init_settings(temp_dir=temporary_dir, path_to_driver=path_to_chrome_driver)
     chrome = webdriver.Chrome(options=options, service=service)
     parser = SeleniumMultiParser(
-        driver=chrome, tmp_dir=temporary_dir, request=request,
+        driver=chrome,
+        tmp_dir=temporary_dir,
+        request=request,
+        request_params=request_params,
+        keyword=keyword,
+        min_keyword_count=int(min_keyword_count) if min_keyword_count.isdigit() else DEFAULT_KEYWORD_COUNT,
+        valid_classifications_code=valid_classifications_code,
     )
     links_dir = dir_manager.make_link_dir(name=LINKS_DIR)
     writer = LinksFileWriter(directory=links_dir)

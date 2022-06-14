@@ -1,3 +1,4 @@
+import re
 import sys
 import threading
 import time
@@ -21,6 +22,7 @@ LINKS_DIR = DirTypeEnum.LINKS_DIR.value
 RESULT_DIR = DirTypeEnum.RESULT_DIR.value
 
 DEFAULT_THREADS_COUNT = 8
+DEFAULT_KEYWORD_COUNT = 10
 
 
 def execute_threading_command(target_func: Callable, links: List,  *args) -> None:
@@ -44,10 +46,21 @@ if __name__ == '__main__':
     request = input(
         'Введите поисковый запрос формата "((((H04L9)) OR (crypt))) assignee:raytheon country:US language:ENGLISH)": '
     ).strip()
-    threads_count = input(f'Введите желаемое количество потоков(по умолчанию {DEFAULT_THREADS_COUNT}): ')
-    start_time = datetime.now()
-    DEFAULT_THREADS_COUNT = int(threads_count) if threads_count.isdigit() else DEFAULT_THREADS_COUNT
+    keyword = input('Введите ключевое слово для поиска на странице: ')
+    min_keyword_count = input(
+        f'Введите мин.количество ключевых слов на странице(по умолчанию {DEFAULT_KEYWORD_COUNT}): '
+    )
     request_params = request.split("assignee")[0].strip().replace(" ", "+")
+    classifications_code = re.search(r'[^(][a-zA-Z\d]+[^)]', request_params)
+
+    if not classifications_code:
+        Message.error_message(f"XXX Неверный формат поискового запроса. XXX")
+        sys.exit()
+    threads_count = input(f'Введите желаемое количество потоков(по умолчанию {DEFAULT_THREADS_COUNT}): ')
+    DEFAULT_THREADS_COUNT = int(threads_count) if threads_count.isdigit() else DEFAULT_THREADS_COUNT
+    start_time = datetime.now()
+    valid_classifications_code = classifications_code.group(0)
+    Message.info_message(f'Код классификатора: {valid_classifications_code}')
     dir_manager = MakeDirManager()
     try:
         links_dir = dir_manager.make_link_dir(name=LINKS_DIR)
@@ -84,7 +97,16 @@ if __name__ == '__main__':
 
         patents_links = LinksFileReader.parse_json_file(path_to_links='links/inventors.json')
         result_dir_name = dir_manager.make_result_dir(name=RESULT_DIR)
-        execute_threading_command(collect_patent, patents_links, path_to_chrome_driver, temporary_dir, result_dir_name)
+        execute_threading_command(
+            collect_patent,
+            patents_links,
+            path_to_chrome_driver,
+            temporary_dir,
+            result_dir_name,
+            valid_classifications_code,
+            keyword,
+            min_keyword_count,
+        )
 
         XlsxFileWriter.zipped_files(dir_name=RESULT_DIR)
     except (FileNotFoundError, KeyError, IndexError, TypeError) as Error:

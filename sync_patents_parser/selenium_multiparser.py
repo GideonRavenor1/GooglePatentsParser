@@ -20,10 +20,19 @@ from selenium_parser import SeleniumParser
 class SeleniumMultiParser(SeleniumParser):
     BASE_URL = "https://patents.google.com/"
 
-    def __init__(self, request: str, driver: webdriver.Chrome, tmp_dir: str) -> None:
-        super().__init__(driver, tmp_dir)
+    def __init__(
+        self,
+        driver: webdriver.Chrome,
+        tmp_dir: str,
+        keyword: str,
+        min_keyword_count: int,
+        valid_classifications_code: str,
+        request: str,
+        request_params: str
+    ) -> None:
+        super().__init__(driver, tmp_dir, keyword, min_keyword_count, valid_classifications_code)
         self._request = request
-        self._request_params = request.split("assignee")[0].strip().replace(" ", "+")
+        self._request_params = request_params
         self._main_links_list = []
         self._inventors_links_list = []
         self._json_element = JsonDict()

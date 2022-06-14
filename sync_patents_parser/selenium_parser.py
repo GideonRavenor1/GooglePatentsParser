@@ -16,14 +16,24 @@ from general_classes.type_annotations import State
 class SeleniumParser:
     file_formats = (".txt",)
 
-    def __init__(self, driver: webdriver.Chrome, tmp_dir: str) -> None:
+    def __init__(
+        self,
+        driver: webdriver.Chrome,
+        tmp_dir: str,
+        keyword: str,
+        min_keyword_count: int,
+        valid_classifications_code: str,
+    ) -> None:
         self._driver = driver
+        self._tmp_dir = tmp_dir
+        self._keyword = keyword
+        self._min_keyword_count = min_keyword_count
+        self._valid_classifications_code = valid_classifications_code
         self._driver.implicitly_wait(time_to_wait=6)
         self._driver.maximize_window()
         self._state = State()
         self._url_regex = re.compile(r"^(http|https)://([\w.]+/?)\S*$")
         self._links = []
-        self._tmp_dir = tmp_dir
         self._result_list = []
 
     def set_links(self, links: List[str]) -> None:
@@ -35,13 +45,18 @@ class SeleniumParser:
             self._state["link"] = link
             Message.success_message("Ссылка сохранена")
             self._click_to_more_button()
+
+            try:
+                self._find_classification_codes()
+            except ValueError:
+                continue
+
             self._find_title()
             self._parse_people_section()
             self._find_country()
             self._find_priority_date()
             self._find_patent_code()
             self._find_publication_date()
-            self._find_classification_codes()
             self._find_abstract()
             self._download_pdf_file(patent_dir=patent_dir)
             self._add_state_to_result_list()
@@ -68,6 +83,59 @@ class SeleniumParser:
         except NoSuchElementException:
             Message.warning_message(
                 f'Кнопка "View more classifications" не найдена. URL: {self._state["link"]}'
+            )
+
+    def _find_classification_codes(self) -> None:
+        try:
+            classification_element = self._driver.find_element(
+                by=By.XPATH, value=XpathIdElements.classification_elements.value
+            )
+        except NoSuchElementException:
+            self._state["classification_codes"] = ""
+            Message.warning_message(
+                f'Коды патентных классификаторов не найдены. URL: {self._state["link"]}'
+            )
+        else:
+            self._parse_classification_elements(element=classification_element)
+
+    def _parse_classification_elements(self, element: WebElement) -> None:
+        find_code_elements = element.find_elements(
+            by=By.XPATH, value=XpathIdElements.classification_element_codes.value
+        )
+        codes = [i.text for i in find_code_elements if i.text]
+        self._validate_patent(list_of_code=codes)
+        if not codes:
+            self._state["classification_codes"] = ""
+            Message.warning_message(
+                f'Коды патентных классификаторов не найдены. URL: {self._state["link"]}'
+            )
+        else:
+            self._state["classification_codes"] = ", ".join(codes)
+            Message.success_message("Кода патентного классификатора сохранены.")
+
+    def _validate_patent(self, list_of_code: List[str]) -> None:
+        Message.info_message('Проверка валидности патента...')
+        check_valid_code = [True if self._valid_classifications_code in code else False for code in list_of_code]
+        if any(check_valid_code):
+            Message.success_message(
+                f"Патент прошел проверку. Найден ключевой классификатор: {self._valid_classifications_code}"
+            )
+            ...
+        else:
+            Message.warning_message(f"Не найден ключевой классификатор: {self._valid_classifications_code}")
+            html = self._driver.find_element(by=By.TAG_NAME, value='html').text
+            count_keywords = len(re.findall(self._keyword, html, flags=re.IGNORECASE))
+            valid_flag = count_keywords >= 10
+            if not valid_flag:
+                Message.warning_message(
+                    f'Недостаточно ключевых слов в патенте. Найдено: {count_keywords}. '
+                    f'Мин.значение: {self._min_keyword_count}.'
+                    f'Патент записан не будет. URL: {self._state["link"]}'
+                )
+                raise ValueError
+            Message.success_message(
+                f"Патент прошел проверку. Найдено ключевых слов: {count_keywords}. "
+                f"Мин.значение: {self._min_keyword_count}."
             )
 
     def _find_title(self) -> None:
@@ -171,19 +239,6 @@ class SeleniumParser:
                 f'Дата публикации не найдена. URL: {self._state["link"]}'
             )
 
-    def _find_classification_codes(self) -> None:
-        try:
-            classification_element = self._driver.find_element(
-                by=By.XPATH, value=XpathIdElements.classification_elements.value
-            )
-        except NoSuchElementException:
-            self._state["classification_codes"] = ""
-            Message.warning_message(
-                f'Коды патентных классификаторов не найдены. URL: {self._state["link"]}'
-            )
-        else:
-            self._parse_classification_elements(element=classification_element)
-
     def _find_abstract(self) -> None:
         try:
             abstract = self._driver.find_element(
@@ -205,21 +260,6 @@ class SeleniumParser:
         except NoSuchElementException:
             self._state["country"] = ""
             Message.warning_message(f'Страна не найдена. URL: {self._state["link"]}')
-
-    def _parse_classification_elements(self, element: WebElement) -> None:
-        find_code_elements = element.find_elements(
-            by=By.XPATH, value=XpathIdElements.classification_element_codes.value
-        )
-        codes = [i.text for i in find_code_elements if i.text]
-
-        if not codes:
-            self._state["classification_codes"] = ""
-            Message.warning_message(
-                f'Коды патентных классификаторов не найдены. URL: {self._state["link"]}'
-            )
-        else:
-            self._state["classification_codes"] = ", ".join(codes)
-            Message.success_message("Кода патентного классификатора сохранены.")
 
     def _download_pdf_file(self, patent_dir: str) -> None:
         Message.info_message("Скачивание pdf файла...")
@@ -248,7 +288,7 @@ class SeleniumParser:
 
     def _execute_download(self, link: str) -> None:
         Message.info_message("Загрузка файла...")
-        wget = f"wget -P {self._tmp_dir} {link}"
+        wget = f"wget -P {self._tmp_dir} {link} -q"
         os.system(wget)
 
     def _add_state_to_result_list(self) -> None:

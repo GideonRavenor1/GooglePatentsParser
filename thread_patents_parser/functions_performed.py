@@ -92,13 +92,28 @@ def collect_patents_inventors_links(links: List[str], path_to_chrome_driver: str
     parser.close_browser()
 
 
-def collect_patent(links: List[Dict], path_to_chrome_driver: str, tmp_dir: str, directory: str) -> None:
+def collect_patent(
+    links: List[Dict],
+    path_to_chrome_driver: str,
+    tmp_dir: str,
+    directory: str,
+    valid_classifications_code: str,
+    keyword: str,
+    min_keyword_count: int,
+) -> None:
     name = threading.current_thread().name
     Message.info_message(f'[{name}] - Сбор патентов автора...')
     service = init_service(path_to_driver=path_to_chrome_driver)
     options = init_settings(temp_dir=tmp_dir)
     chrome = webdriver.Chrome(service=service, options=options)
-    parser = SeleniumPatentsParser(driver=chrome, thread_name=name, tmp_dir=tmp_dir)
+    parser = SeleniumPatentsParser(
+        driver=chrome,
+        thread_name=name,
+        tmp_dir=tmp_dir,
+        keyword=keyword,
+        min_keyword_count=min_keyword_count,
+        valid_classifications_code=valid_classifications_code,
+    )
     patents_links_len = len(links)
     for element in links:
         dir_name = element["name"]
