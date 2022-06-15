@@ -13,12 +13,11 @@ from general_classes.logger import Message
 
 class SeleniumBaseParser:
 
-    def __init__(self, driver: webdriver.Chrome, thread_name: str) -> None:
+    def __init__(self, driver: webdriver.Chrome) -> None:
         self._driver = driver
         self._driver.implicitly_wait(time_to_wait=6)
         self._driver.maximize_window()
         self._links = []
-        self._thread_name = thread_name
 
     def close_browser(self) -> None:
         self._driver.close()
@@ -38,7 +37,7 @@ class SeleniumLinksParser(SeleniumBaseParser):
         links_number = self._find_total_items_result()
         if all_result:
             self._add_more_result_per_page()
-        Message.info_message(f"[{self._thread_name}] Всего результатов на странице: {links_number}")
+        Message.info_message(f"Всего результатов на странице: {links_number}")
         total_added = 0
         while total_added < links_number:
             time.sleep(1)
@@ -51,7 +50,7 @@ class SeleniumLinksParser(SeleniumBaseParser):
             len_links_to_str = len(links_to_str)
             total_added += len_links_to_str
             Message.info_message(
-                f"[{self._thread_name}] Добавлено ссылок: {len_links_to_str}. Всего добавлено: {total_added}"
+                f"Добавлено ссылок: {len_links_to_str}. Всего добавлено: {total_added}"
             )
             list_.extend(links_to_str)
             self._click_to_next_button(xpath=SearchItems.next_button.value)
@@ -77,9 +76,9 @@ class SeleniumLinksParser(SeleniumBaseParser):
                 ec.element_to_be_clickable((By.XPATH, xpath))
             )
             button.click()
-            Message.info_message(f"[{self._thread_name}] Переход на следующую страницу...")
+            Message.info_message("Переход на следующую страницу...")
         except TimeoutException:
-            Message.warning_message(f'[{self._thread_name}]  Кнопка "следующая страница" не найдена.')
+            Message.warning_message('Кнопка "следующая страница" не найдена.')
             ...
 
     def _find_total_items_result(self) -> int:
@@ -88,7 +87,7 @@ class SeleniumLinksParser(SeleniumBaseParser):
                 by=By.XPATH, value=SearchItems.num_result.value
             )
         except NoSuchElementException:
-            Message.warning_message(f'[{self._thread_name}] Элемент "Всего результатов" не найден')
+            Message.warning_message(f'Элемент "Всего результатов" не найден')
             result = "0"
         res_number = list(filter(lambda x: x.isdigit(), result.text.split()))
         return int(res_number[0])

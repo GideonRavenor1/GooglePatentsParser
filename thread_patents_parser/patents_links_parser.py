@@ -20,16 +20,16 @@ LOCK = threading.Lock()
 
 class SeleniumPatentsInventorsLinksParser(SeleniumLinksParser):
 
-    def __init__(self, driver: webdriver.Chrome, thread_name: str):
-        super().__init__(driver, thread_name)
+    def __init__(self, driver: webdriver.Chrome):
+        super().__init__(driver)
         self._json_element = JsonDict()
         self._patents_links_list = []
 
     def collect_links(self) -> List[JsonDict]:
         len_patents_links = len(self._links)
         for link in self._links:
-            Message.info_message(f"[{self._thread_name}] Осталось спарсить ссылок: {len_patents_links}")
-            Message.info_message(f"[{self._thread_name}] Текущая ссылка: {link}")
+            Message.info_message(f"Осталось спарсить ссылок: {len_patents_links}")
+            Message.info_message(f"Текущая ссылка: {link}")
             self._follow_the_link(link=link)
             inventor = (
                 link.split("inventor")[2]
@@ -39,7 +39,7 @@ class SeleniumPatentsInventorsLinksParser(SeleniumLinksParser):
             )
             len_patents_links -= 1
             if not self._check_result():
-                Message.warning_message(f"[{self._thread_name}] Патенты у автора {inventor} не найдена")
+                Message.warning_message(f"Патенты у автора {inventor} не найдена")
                 continue
             self._json_element["name"] = inventor
             self._json_element["links"] = []
@@ -51,9 +51,9 @@ class SeleniumPatentsInventorsLinksParser(SeleniumLinksParser):
         return self._patents_links_list
 
     def _links_converter(self, data: List) -> List:
-        Message.info_message(f"[{self._thread_name}] Конвертация {len(data)} ссылок..")
+        Message.info_message(f"Конвертация {len(data)} ссылок..")
         list_link = list({urljoin(base=self.BASE_URL, url=url) for url in data})
-        Message.info_message(f"[{self._thread_name}] Всего уникальных ссылок: {len(list_link)}")
+        Message.info_message(f"Всего уникальных ссылок: {len(list_link)}")
         return list_link
 
 
@@ -62,13 +62,12 @@ class SeleniumPatentsParser(SeleniumBaseParser):
     def __init__(
         self,
         driver: webdriver.Chrome,
-        thread_name: str,
         tmp_dir: str,
         valid_classifications_code: str,
         keyword: str,
         min_keyword_count: int
     ) -> None:
-        super().__init__(driver, thread_name)
+        super().__init__(driver)
         self._tmp_dir = tmp_dir
         self._valid_classifications_code = valid_classifications_code
         self._keyword = keyword
@@ -81,7 +80,7 @@ class SeleniumPatentsParser(SeleniumBaseParser):
         for link in self._links:
             self._follow_the_link(link=link)
             self._state["link"] = link
-            Message.success_message(f"[{self._thread_name}] Ссылка сохранена")
+            Message.success_message(f"Ссылка сохранена")
             self._click_to_more_button()
 
             try:
@@ -100,7 +99,7 @@ class SeleniumPatentsParser(SeleniumBaseParser):
             self._add_state_to_result_list()
 
     def get_state(self) -> List[State]:
-        Message.info_message(f"[{self._thread_name}] Выгружается стейт...")
+        Message.info_message("Выгружается стейт...")
         copy_state = self._result_list.copy()
         self._result_list.clear()
         return copy_state
@@ -112,9 +111,7 @@ class SeleniumPatentsParser(SeleniumBaseParser):
             )
             self._driver.execute_script("arguments[0].click();", button)
         except NoSuchElementException:
-            Message.warning_message(
-                f'[{self._thread_name}] Кнопка "View more classifications" не найдена. URL: {self._state["link"]}'
-            )
+            Message.warning_message(f'Кнопка "View more classifications" не найдена. URL: {self._state["link"]}')
 
     def _find_classification_codes(self) -> None:
         try:
@@ -123,9 +120,7 @@ class SeleniumPatentsParser(SeleniumBaseParser):
             )
         except NoSuchElementException:
             self._state["classification_codes"] = ""
-            Message.warning_message(
-                f'[{self._thread_name}] Коды патентных классификаторов не найдены. URL: {self._state["link"]}'
-            )
+            Message.warning_message(f'Коды патентных классификаторов не найдены. URL: {self._state["link"]}')
         else:
             self._parse_classification_elements(element=classification_element)
 
@@ -137,37 +132,33 @@ class SeleniumPatentsParser(SeleniumBaseParser):
         self._validate_patent(list_of_code=codes)
         if not codes:
             self._state["classification_codes"] = ""
-            Message.warning_message(
-                f'[{self._thread_name}] Коды патентных классификаторов не найдены. URL: {self._state["link"]}'
-            )
+            Message.warning_message(f'Коды патентных классификаторов не найдены. URL: {self._state["link"]}')
         else:
             self._state["classification_codes"] = ", ".join(codes)
-            Message.success_message(f"[{self._thread_name}] Кода патентного классификатора сохранены.")
+            Message.success_message(f" Кода патентного классификатора сохранены.")
 
     def _validate_patent(self, list_of_code: List[str]) -> None:
-        Message.info_message(f'[{self._thread_name}] Проверка валидности патента...')
+        Message.info_message(f' Проверка валидности патента...')
         check_valid_code = [True if self._valid_classifications_code in code else False for code in list_of_code]
         if any(check_valid_code):
             Message.success_message(
-                f"[{self._thread_name}] Патент прошел проверку. Найден ключевой классификатор: {self._valid_classifications_code}"
+                f"Патент прошел проверку. Найден ключевой классификатор: {self._valid_classifications_code}"
             )
             ...
         else:
-            Message.warning_message(
-                f"[{self._thread_name}] Не найден ключевой классификатор: {self._valid_classifications_code}"
-            )
+            Message.warning_message(f"Не найден ключевой классификатор: {self._valid_classifications_code}")
             html = self._driver.find_element(by=By.TAG_NAME, value='html').text
             count_keywords = len(re.findall(self._keyword, html, flags=re.IGNORECASE))
             valid_flag = count_keywords >= self._min_keyword_count
             if not valid_flag:
                 Message.warning_message(
-                    f'[{self._thread_name}] Недостаточно ключевых слов в патенте. Найдено: {count_keywords}. '
-                    f'Мин.значение: {self._min_keyword_count}. '
+                    f"Недостаточно ключевых слов в патенте. Найдено: {count_keywords}. "
+                    f"Мин.значение: {self._min_keyword_count}. "
                     f'Патент записан не будет. URL: {self._state["link"]}'
                 )
                 raise ValueError
             Message.success_message(
-                f"[{self._thread_name}] Патент прошел проверку. Найдено ключевых слов: {count_keywords}. "
+                f"Патент прошел проверку. Найдено ключевых слов: {count_keywords}. "
                 f"Мин.значение: {self._min_keyword_count}."
             )
 
@@ -177,12 +168,10 @@ class SeleniumPatentsParser(SeleniumBaseParser):
                 by=By.XPATH, value=XpathIdElements.patent_title.value
             )
             self._state["title"] = title.text
-            Message.success_message(f"[{self._thread_name}] Название патента сохранено")
+            Message.success_message("Название патента сохранено")
         except NoSuchElementException:
             self._state["title"] = ""
-            Message.warning_message(
-                f'[{self._thread_name}] Название патента не найдено. URL: {self._state["link"]}'
-            )
+            Message.warning_message(f'Название патента не найдено. URL: {self._state["link"]}')
 
     def _parse_people_section(self) -> None:
         people_section = self._driver.find_elements(
@@ -191,9 +180,7 @@ class SeleniumPatentsParser(SeleniumBaseParser):
         if not people_section:
             self._state["current_assignee"] = []
             self._state["inventors"] = []
-            Message.warning_message(
-                f'[{self._thread_name}] Секция people_section не найдена. URL: {self._state["link"]}'
-            )
+            Message.warning_message(f'Секция people_section не найдена. URL: {self._state["link"]}')
         else:
             self._add_elements_to_state(people_section=people_section)
 
@@ -217,15 +204,13 @@ class SeleniumPatentsParser(SeleniumBaseParser):
                 elif current_element == UniqueNames.CURRENT_ASSIGNEE.value:
                     current_assignee.append(element.text)
         if not current_assignee:
-            Message.warning_message(
-                f'[{self._thread_name}] Патентообладатели не найдены. URL: {self._state["link"]}'
-            )
+            Message.warning_message(f'Патентообладатели не найдены. URL: {self._state["link"]}')
         else:
-            Message.success_message(f"[{self._thread_name}] Патентообладатели сохранены")
+            Message.success_message("Патентообладатели сохранены")
         if not inventors:
-            Message.warning_message(f'[{self._thread_name}] Авторы не найдены. URL: {self._state["link"]}')
+            Message.warning_message(f'Авторы не найдены. URL: {self._state["link"]}')
         else:
-            Message.success_message(f"[{self._thread_name}] Авторы сохранены")
+            Message.success_message("Авторы сохранены")
         self._state["current_assignee"] = current_assignee
         self._state["inventors"] = inventors
 
@@ -236,12 +221,10 @@ class SeleniumPatentsParser(SeleniumBaseParser):
             )
             date_to_datetime = datetime.strptime(priority_date.text, "%Y-%m-%d")
             self._state["priority_date"] = date_to_datetime.strftime("%d.%m.%Y")
-            Message.success_message(f"[{self._thread_name}] Дата приоритета сохранена")
+            Message.success_message("Дата приоритета сохранена")
         except NoSuchElementException:
             self._state["priority_date"] = ""
-            Message.warning_message(
-                f'[{self._thread_name}] Дата приоритета не найдена. URL: {self._state["link"]}'
-            )
+            Message.warning_message(f'Дата приоритета не найдена. URL: {self._state["link"]}')
 
     def _find_patent_code(self) -> None:
         try:
@@ -249,12 +232,10 @@ class SeleniumPatentsParser(SeleniumBaseParser):
                 by=By.XPATH, value=XpathIdElements.patent_code.value
             )
             self._state["patent_code"] = patent_code.text
-            Message.success_message(f"[{self._thread_name}] Номер патента сохранён")
+            Message.success_message("Номер патента сохранён")
         except NoSuchElementException:
             self._state["patent_code"] = ""
-            Message.warning_message(
-                f'[{self._thread_name}] Номер патента не найден. URL: {self._state["link"]}'
-            )
+            Message.warning_message(f'Номер патента не найден. URL: {self._state["link"]}')
 
     def _find_publication_date(self) -> None:
         patent_code = self._state["patent_code"]
@@ -265,22 +246,20 @@ class SeleniumPatentsParser(SeleniumBaseParser):
             publication_date = self._driver.find_element(by=By.XPATH, value=xpath)
             date_to_datetime = datetime.strptime(publication_date.text, "%Y-%m-%d")
             self._state["publication_date"] = date_to_datetime.strftime("%d.%m.%Y")
-            Message.success_message(f"[{self._thread_name}] Дата публикации сохранена")
+            Message.success_message("Дата публикации сохранена")
         except NoSuchElementException:
             self._state["publication_date"] = ""
-            Message.warning_message(
-                f'[{self._thread_name}] Дата публикации не найдена. URL: {self._state["link"]}'
-            )
+            Message.warning_message(f'Дата публикации не найдена. URL: {self._state["link"]}')
 
     def _find_abstract(self) -> None:
         try:
             abstract = self._driver.find_element(
                 by=By.XPATH, value=XpathRightPartElements.abstract.value
             )
-            Message.success_message(f"[{self._thread_name}] Абстракт сохранён")
+            Message.success_message("Абстракт сохранён")
             self._state["abstract"] = abstract.text
         except NoSuchElementException:
-            Message.warning_message(f'[{self._thread_name}] Абстракт не найден. URL: {self._state["link"]}')
+            Message.warning_message(f'Абстракт не найден. URL: {self._state["link"]}')
             self._state["abstract"] = ""
 
     def _find_country(self) -> None:
@@ -289,23 +268,21 @@ class SeleniumPatentsParser(SeleniumBaseParser):
                 by=By.XPATH, value=XpathRightPartElements.country.value
             )
             self._state["country"] = country.text
-            Message.success_message(f"[{self._thread_name}] Страна сохранена")
+            Message.success_message("Страна сохранена")
         except NoSuchElementException:
             self._state["country"] = ""
-            Message.warning_message(f'[{self._thread_name}] Страна не найдена. URL: {self._state["link"]}')
+            Message.warning_message(f'Страна не найдена. URL: {self._state["link"]}')
 
     def _download_pdf_file(self, patent_dir: str) -> None:
-        Message.info_message(f"[{self._thread_name}] Скачивание pdf файла...")
+        Message.info_message("Скачивание pdf файла...")
         element = self._driver.find_element(
             by=By.XPATH, value=XpathRightPartElements.pdf.value
         )
         link = element.get_attribute("href")
         LOCK.acquire()
         if link is None:
-            Message.warning_message(
-                f'[{self._thread_name}] Ссылка для скачивания PDF не найдена. URL: {self._state["link"]}'
-            )
-            Message.info_message(f"[{self._thread_name}] Скачивание html файла...")
+            Message.warning_message(f'Ссылка для скачивания PDF не найдена. URL: {self._state["link"]}')
+            Message.info_message(f" Скачивание html файла...")
             html = self._driver.page_source
             target = os.path.join(patent_dir, f"{self._state['patent_code']}.html")
             with open(target, "w", encoding="utf-8") as file:
@@ -317,12 +294,12 @@ class SeleniumPatentsParser(SeleniumBaseParser):
             target = os.path.join(patent_dir, file_name)
             os.replace(file_path, target)
         LOCK.release()
-        Message.success_message(f"[{self._thread_name}] Файл успешно скачен.")
+        Message.success_message("Файл успешно скачен.")
         self._state["path_to_pdf_file"] = "/".join(target.split("/")[-3:])
-        Message.success_message(f"[{self._thread_name}] Путь к файлу сохранён.")
+        Message.success_message("Путь к файлу сохранён.")
 
     def _execute_download(self, link: str) -> None:
-        Message.info_message(f"[{self._thread_name}] Загрузка файла...")
+        Message.info_message("Загрузка файла...")
         wget = f"wget -P {self._tmp_dir} {link} -q"
         os.system(wget)
 

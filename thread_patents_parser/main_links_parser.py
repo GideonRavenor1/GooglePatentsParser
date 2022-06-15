@@ -12,8 +12,8 @@ from thread_patents_parser.base import SeleniumLinksParser
 
 class SeleniumMainLinksParser(SeleniumLinksParser):
 
-    def __init__(self, driver: webdriver.Chrome, request: str, thread_name: str) -> None:
-        super().__init__(driver, thread_name)
+    def __init__(self, driver: webdriver.Chrome, request: str) -> None:
+        super().__init__(driver)
         self._request = request
         self._main_links_list = []
 
@@ -21,7 +21,7 @@ class SeleniumMainLinksParser(SeleniumLinksParser):
         self._follow_the_link(link=self.BASE_URL)
         self._fill_form(request=self._request)
         if not self._check_result():
-            raise ValueError(f"[{self._thread_name}] Ошибка. Результатов по введённому запросу не найдено")
+            raise ValueError("Ошибка. Результатов по введённому запросу не найдено")
         self._add_links_to_list(list_=self._main_links_list, all_result=True)
         valid_links = self._links_converter(data=self._main_links_list)
         return valid_links
@@ -32,10 +32,10 @@ class SeleniumMainLinksParser(SeleniumLinksParser):
         )
         form.send_keys(request)
         form.send_keys(Keys.ENTER)
-        Message.info_message(f"[{self._thread_name}] Ввод запроса в форму...")
+        Message.info_message("Ввод запроса в форму...")
 
     def _links_converter(self, data: List) -> List:
-        Message.info_message(f"[{self._thread_name}] Конвертация {len(data)} ссылок..")
+        Message.info_message(f"Конвертация {len(data)} ссылок..")
         list_link = list({urljoin(base=self.BASE_URL, url=url) for url in data})
-        Message.info_message(f"[{self._thread_name}] Всего уникальных ссылок: {len(list_link)}")
+        Message.info_message(f"Всего уникальных ссылок: {len(list_link)}")
         return list_link

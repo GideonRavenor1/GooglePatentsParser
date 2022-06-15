@@ -1,4 +1,3 @@
-import os
 import re
 import sys
 import threading
@@ -24,6 +23,7 @@ RESULT_DIR = DirTypeEnum.RESULT_DIR.value
 
 DEFAULT_THREADS_COUNT = 8
 DEFAULT_KEYWORD_COUNT = 10
+REQUIRED_WORD = "assignee"
 
 
 def execute_threading_command(target_func: Callable, links: List,  *args) -> None:
@@ -45,17 +45,23 @@ def execute_threading_command(target_func: Callable, links: List,  *args) -> Non
 if __name__ == '__main__':
     path_to_chrome_driver = 'chromedriver'
     request = input(
-        'Введите поисковый запрос формата "((((H04L9)) OR (crypt))) assignee:raytheon country:US language:ENGLISH)": '
+        'Введите поисковый запрос формата "((((H04L9)) OR (crypt))) '
+        f'{REQUIRED_WORD}:raytheon country:US language:ENGLISH)": '
     ).strip()
     keyword = input('Введите ключевое слово для поиска на странице: ')
     min_keyword_count = input(
         f'Введите мин.количество ключевых слов на странице(по умолчанию {DEFAULT_KEYWORD_COUNT}): '
     )
+
+    if REQUIRED_WORD not in request:
+        Message.error_message(f"Неверный формат поискового запроса. Слово {REQUIRED_WORD} в запросе обязательно.")
+        sys.exit()
+
     request_params = request.split("assignee")[0].strip().replace(" ", "+")
     classifications_code = re.search(r'[^(][a-zA-Z\d]+[^)]', request_params)
 
     if not classifications_code:
-        Message.error_message(f"XXX Неверный формат поискового запроса. XXX")
+        Message.error_message("Неверный формат поискового запроса. Не найден код классификатора")
         sys.exit()
 
     threads_count = input(f'Введите желаемое количество потоков(по умолчанию {DEFAULT_THREADS_COUNT}): ')

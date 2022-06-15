@@ -1,4 +1,3 @@
-import threading
 from math import ceil
 from typing import List, Dict
 
@@ -17,19 +16,17 @@ RESULT_ARRAY = []
 
 
 def validate_urls(array: List) -> List:
-    Message.info_message(f'Общее количество ссылок: {len(array)}')
+    Message.info_message(f"Общее количество ссылок: {len(array)}")
     seen_links = {}
     validate_links = [
         seen_links.setdefault(link.lower(), link) for link in array if link.lower() not in seen_links
     ]
-    Message.info_message(f'Общее количество уникальных ссылок: {len(validate_links)}')
+    Message.info_message(f"Общее количество уникальных ссылок: {len(validate_links)}")
     return validate_links
 
 
 def init_settings(temp_dir: str) -> Options:
-    prefs = {
-        "download.default_directory": temp_dir,
-    }
+    prefs = {"download.default_directory": temp_dir}
     chrome_options = webdriver.ChromeOptions()
     chrome_options.add_experimental_option("prefs", prefs)
     return chrome_options
@@ -46,30 +43,28 @@ def divide_into_parts(array: List, parts: int) -> List[List]:
 
 
 def collect_main_links(path_to_chrome_driver: str, request: str, directory: str, file_name: str) -> str:
-    name = threading.current_thread().name
-    Message.info_message(f"[{name}] Сбор основных ссылок...")
+    Message.info_message("Сбор основных ссылок...")
     service = init_service(path_to_driver=path_to_chrome_driver)
     chrome = webdriver.Chrome(service=service)
-    parser = SeleniumMainLinksParser(driver=chrome, request=request, thread_name=name)
+    parser = SeleniumMainLinksParser(driver=chrome, request=request)
     links_list = parser.collect_links()
     path_to_main_links = LinksFileWriter.write_links_to_txt_file(
         file_name=file_name,
         data=links_list,
         directory=directory,
     )
-    Message.success_message(f"[{name}] Сбор основных ссылок завершен.")
+    Message.success_message("Сбор основных ссылок завершен.")
     parser.close_browser()
     return path_to_main_links
 
 
 def collect_inventors_links(links: List[str], request_params: str, path_to_chrome_driver: str) -> None:
-    name = threading.current_thread().name
-    Message.info_message(f'[{name}] - Сбор ссылок авторов...')
+    Message.info_message("Сбор ссылок авторов...")
     service = init_service(path_to_driver=path_to_chrome_driver)
     chrome = webdriver.Chrome(service=service)
-    parser = SeleniumInventorsLinksParser(driver=chrome, request_param=request_params, thread_name=name)
+    parser = SeleniumInventorsLinksParser(driver=chrome, request_param=request_params)
     parser.set_links(links=links)
-    Message.success_message(f'[{name}] - Сбор ссылок авторов завершен.')
+    Message.success_message("Сбор ссылок авторов завершен.")
     result = parser.collect_links()
     LOCK.acquire()
     RESULT_ARRAY.extend(result)
@@ -78,13 +73,12 @@ def collect_inventors_links(links: List[str], request_params: str, path_to_chrom
 
 
 def collect_patents_inventors_links(links: List[str], path_to_chrome_driver: str) -> None:
-    name = threading.current_thread().name
-    Message.info_message(f'[{name}] - Сбор ссылок патентов авторов...')
+    Message.info_message("Сбор ссылок патентов авторов...")
     service = init_service(path_to_driver=path_to_chrome_driver)
     chrome = webdriver.Chrome(service=service)
-    parser = SeleniumPatentsInventorsLinksParser(driver=chrome, thread_name=name)
+    parser = SeleniumPatentsInventorsLinksParser(driver=chrome)
     parser.set_links(links=links)
-    Message.success_message(f'[{name}] - Сбор ссылок патентов авторов завершен.')
+    Message.success_message("Сбор ссылок патентов авторов завершен.")
     result = parser.collect_links()
     LOCK.acquire()
     RESULT_ARRAY.extend(result)
@@ -101,14 +95,12 @@ def collect_patent(
     keyword: str,
     min_keyword_count: int,
 ) -> None:
-    name = threading.current_thread().name
-    Message.info_message(f'[{name}] - Сбор патентов автора...')
+    Message.info_message("Сбор патентов автора...")
     service = init_service(path_to_driver=path_to_chrome_driver)
     options = init_settings(temp_dir=tmp_dir)
     chrome = webdriver.Chrome(service=service, options=options)
     parser = SeleniumPatentsParser(
         driver=chrome,
-        thread_name=name,
         tmp_dir=tmp_dir,
         keyword=keyword,
         min_keyword_count=min_keyword_count,
@@ -129,4 +121,4 @@ def collect_patent(
         writer = XlsxFileWriter(directory=dir_author, state=state)
         writer.execute_write()
         patents_links_len -= 1
-    Message.success_message(f'[{name}] - Сбор патентов авторов завершен.')
+    Message.success_message("Сбор патентов авторов завершен.")

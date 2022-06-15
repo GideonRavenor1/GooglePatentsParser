@@ -22,6 +22,7 @@ LINKS_DIR = DirTypeEnum.LINKS_DIR.value
 RESULT_DIR = DirTypeEnum.RESULT_DIR.value
 
 DEFAULT_KEYWORD_COUNT = 10
+REQUIRED_WORD = "assignee"
 
 
 def init_settings(temp_dir: str, path_to_driver: str) -> Tuple[Options, Service]:
@@ -37,22 +38,28 @@ def init_settings(temp_dir: str, path_to_driver: str) -> Tuple[Options, Service]
 if __name__ == "__main__":
     path_to_chrome_driver = 'chromedriver'
     request = input(
-        'Введите поисковый запрос формата "((((H04L9)) OR (crypt))) assignee:raytheon country:US language:ENGLISH)": '
+        'Введите поисковый запрос формата "((((H04L9)) OR (crypt))) '
+        f'{REQUIRED_WORD}:raytheon country:US language:ENGLISH)": '
     ).strip()
     keyword = input('Введите ключевое слово для поиска на странице: ')
     min_keyword_count = input(
         f'Введите мин.количество ключевых слов на странице(по умолчанию {DEFAULT_KEYWORD_COUNT}): '
     )
-    DEFAULT_KEYWORD_COUNT = int(min_keyword_count) if min_keyword_count.isdigit() else DEFAULT_KEYWORD_COUNT
+
+    if REQUIRED_WORD not in request:
+        Message.error_message(f"Неверный формат поискового запроса. Слово {REQUIRED_WORD} в запросе обязательно.")
+        sys.exit()
+
     request_params = request.split("assignee")[0].strip().replace(" ", "+")
     classifications_code = re.search(r'[^(][a-zA-Z\d]+[^)]', request_params)
 
     if not classifications_code:
-        Message.error_message(f"XXX Неверный формат поискового запроса. XXX")
+        Message.error_message("Неверный формат поискового запроса. Не найден код классификатора")
         sys.exit()
 
     start_time = datetime.now()
 
+    DEFAULT_KEYWORD_COUNT = int(min_keyword_count) if min_keyword_count.isdigit() else DEFAULT_KEYWORD_COUNT
     valid_classifications_code = classifications_code.group(0)
     Message.info_message(f'Код классификатора: {valid_classifications_code}')
     dir_manager = MakeDirManager()
