@@ -118,11 +118,9 @@ if __name__ == "__main__":
         time.sleep(5)
         writer.zipped_files(dir_name=RESULT_DIR)
     except FileExistsError as Error:
-        Message.error_message(f"XXX Ошибка в работе программы. Ошибка: {Error}. XXX")
+        Message.error_message(f"Ошибка в работе программы. Ошибка: {Error}.")
     finally:
         execution_time = datetime.now() - start_time
         Message.info_message(f"Время выполнения: {execution_time}")
         parser.close_browser()
-        Message.success_message(
-            "============== Завершение работы программы. =============="
-        )
+        Message.success_message("============== Завершение работы программы. ==============")

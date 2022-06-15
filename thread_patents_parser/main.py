@@ -124,11 +124,8 @@ if __name__ == '__main__':
         time.sleep(5)
         XlsxFileWriter.zipped_files(dir_name=RESULT_DIR)
     except (FileNotFoundError, KeyError, IndexError, TypeError) as Error:
-        Message.error_message(f"XXX Ошибка в работе программы. Ошибка: {Error}. XXX")
+        Message.error_message(f"Ошибка в работе программы. Ошибка: {Error}.")
     finally:
         execution_time = datetime.now() - start_time
         Message.info_message(f"Время выполнения: {execution_time}")
-        Message.success_message(
-            "============== Завершение работы программы. =============="
-        )
-        sys.exit()
+        Message.success_message("============== Завершение работы программы. ==============")
