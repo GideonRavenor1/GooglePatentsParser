@@ -14,7 +14,6 @@ from general_classes.type_annotations import State
 
 
 class SeleniumParser:
-    file_formats = (".txt",)
 
     def __init__(
         self,
