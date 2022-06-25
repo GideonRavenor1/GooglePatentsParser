@@ -19,7 +19,6 @@ INVENTORS_TXT = FileTypeEnum.INVENTORS_TXT.value
 INVENTORS_JSON = FileTypeEnum.INVENTORS_JSON.value
 TEMP_DIR = DirTypeEnum.TEMP_DIR.value
 LINKS_DIR = DirTypeEnum.LINKS_DIR.value
-RESULT_DIR = DirTypeEnum.RESULT_DIR.value
 
 DEFAULT_KEYWORD_COUNT = 10
 REQUIRED_WORD = "assignee"
@@ -45,6 +44,7 @@ if __name__ == "__main__":
     min_keyword_count = input(
         f'Введите мин.количество ключевых слов на странице(по умолчанию {DEFAULT_KEYWORD_COUNT}): '
     )
+    result_dir_name = input('Введите желаемое название архива с результатом: ')
 
     if REQUIRED_WORD not in request:
         Message.error_message(f"Неверный формат поискового запроса. Слово {REQUIRED_WORD} в запросе обязательно.")
@@ -114,9 +114,9 @@ if __name__ == "__main__":
             writer.execute_write()
             patents_links_len -= 1
 
-        writer.delete_empty_directory(dir_name=RESULT_DIR)
+        writer.delete_empty_directory(dir_name=result_dir_name)
         time.sleep(5)
-        writer.zipped_files(dir_name=RESULT_DIR)
+        writer.zipped_files(dir_name=result_dir_name)
     except FileExistsError as Error:
         Message.error_message(f"Ошибка в работе программы. Ошибка: {Error}.")
     finally:

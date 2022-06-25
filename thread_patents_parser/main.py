@@ -19,7 +19,6 @@ INVENTORS_TXT = FileTypeEnum.INVENTORS_TXT.value
 INVENTORS_JSON = FileTypeEnum.INVENTORS_JSON.value
 TEMP_DIR = DirTypeEnum.TEMP_DIR.value
 LINKS_DIR = DirTypeEnum.LINKS_DIR.value
-RESULT_DIR = DirTypeEnum.RESULT_DIR.value
 
 DEFAULT_THREADS_COUNT = 8
 DEFAULT_KEYWORD_COUNT = 10
@@ -65,6 +64,7 @@ if __name__ == '__main__':
         sys.exit()
 
     threads_count = input(f'Введите желаемое количество потоков(по умолчанию {DEFAULT_THREADS_COUNT}): ')
+    result_dir_name = input('Введите желаемое название архива с результатом: ')
 
     start_time = datetime.now()
 
@@ -120,9 +120,9 @@ if __name__ == '__main__':
             DEFAULT_KEYWORD_COUNT,
         )
 
-        XlsxFileWriter.delete_empty_directory(dir_name=RESULT_DIR)
+        XlsxFileWriter.delete_empty_directory(dir_name=result_dir_name)
         time.sleep(5)
-        XlsxFileWriter.zipped_files(dir_name=RESULT_DIR)
+        XlsxFileWriter.zipped_files(dir_name=result_dir_name)
     except (FileNotFoundError, KeyError, IndexError, TypeError) as Error:
         Message.error_message(f"Ошибка в работе программы. Ошибка: {Error}.")
     finally:

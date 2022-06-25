@@ -4,7 +4,6 @@ from enum import Enum
 class DirTypeEnum(Enum):
     TEMP_DIR = "/tmp/google_patents/"
     LINKS_DIR = "links"
-    RESULT_DIR = "result"
 
 
 class FileTypeEnum(Enum):
