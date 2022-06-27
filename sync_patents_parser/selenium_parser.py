@@ -1,7 +1,7 @@
 import os
 import re
 from datetime import datetime
-from typing import List
+from typing import List, Dict
 
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
@@ -35,7 +35,7 @@ class SeleniumParser:
         self._links = []
         self._result_list = []
 
-    def set_links(self, links: List[str]) -> None:
+    def set_links(self, links: List[Dict]) -> None:
         self._links = links
 
     def parse_patents_links(self, patent_dir: str) -> None:

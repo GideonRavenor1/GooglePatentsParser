@@ -1,5 +1,5 @@
 import time
-from typing import List
+from typing import List, Dict
 
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
@@ -23,7 +23,7 @@ class SeleniumBaseParser:
         self._driver.close()
         self._driver.quit()
 
-    def set_links(self, links: List[str]) -> None:
+    def set_links(self, links: List[Dict]) -> None:
         self._links = links
 
     def _follow_the_link(self, link: str) -> None:
@@ -45,7 +45,7 @@ class SeleniumLinksParser(SeleniumBaseParser):
                 by=By.XPATH, value=SearchItems.result_items.value
             )
             links_to_str = [
-                element.get_attribute("data-result") for element in links_elements
+                {"link": element.get_attribute("data-result")} for element in links_elements
             ]
             len_links_to_str = len(links_to_str)
             total_added += len_links_to_str
@@ -87,7 +87,7 @@ class SeleniumLinksParser(SeleniumBaseParser):
                 by=By.XPATH, value=SearchItems.num_result.value
             )
         except NoSuchElementException:
-            Message.warning_message(f'Элемент "Всего результатов" не найден')
+            Message.warning_message('Элемент "Всего результатов" не найден')
             result = "0"
         res_number = list(filter(lambda x: x.isdigit(), result.text.split()))
         return int(res_number[0])

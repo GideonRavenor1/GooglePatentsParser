@@ -7,7 +7,7 @@ from selenium.webdriver.chrome.service import Service
 
 from general_classes.file_services import MakeDirManager, XlsxFileWriter
 from general_classes.logger import Message
-from thread_patents_parser.file_services import LinksFileWriter
+from thread_patents_parser.file_services import LinksJsonFileWriter
 from thread_patents_parser.inventors_links_parser import SeleniumInventorsLinksParser
 from thread_patents_parser.main_links_parser import SeleniumMainLinksParser
 from thread_patents_parser.patents_links_parser import SeleniumPatentsInventorsLinksParser, SeleniumPatentsParser, LOCK
@@ -15,12 +15,16 @@ from thread_patents_parser.patents_links_parser import SeleniumPatentsInventorsL
 RESULT_ARRAY = []
 
 
-def validate_urls(array: List) -> List:
+def validate_urls(array: List[Dict]) -> List[Dict]:
     Message.info_message(f"Общее количество ссылок: {len(array)}")
-    seen_links = {}
-    validate_links = [
-        seen_links.setdefault(link.lower(), link) for link in array if link.lower() not in seen_links
-    ]
+    seen_links = set()
+    validate_links = []
+    for element in array:
+        query = element["link"]
+        lower_query = query.lower()
+        if lower_query not in seen_links:
+            seen_links.add(lower_query)
+            validate_links.append(element)
     Message.info_message(f"Общее количество уникальных ссылок: {len(validate_links)}")
     return validate_links
 
@@ -48,7 +52,7 @@ def collect_main_links(path_to_chrome_driver: str, request: str, directory: str,
     chrome = webdriver.Chrome(service=service)
     parser = SeleniumMainLinksParser(driver=chrome, request=request)
     links_list = parser.collect_links()
-    path_to_main_links = LinksFileWriter.write_links_to_txt_file(
+    path_to_main_links = LinksJsonFileWriter.write_links_to_file(
         file_name=file_name,
         data=links_list,
         directory=directory,
@@ -58,11 +62,20 @@ def collect_main_links(path_to_chrome_driver: str, request: str, directory: str,
     return path_to_main_links
 
 
-def collect_inventors_links(links: List[str], request_params: str, path_to_chrome_driver: str) -> None:
+def collect_inventors_links(
+    links: List[Dict],
+    request_params_before: str,
+    request_params_after: str,
+    path_to_chrome_driver: str
+) -> None:
     Message.info_message("Сбор ссылок авторов...")
     service = init_service(path_to_driver=path_to_chrome_driver)
     chrome = webdriver.Chrome(service=service)
-    parser = SeleniumInventorsLinksParser(driver=chrome, request_param=request_params)
+    parser = SeleniumInventorsLinksParser(
+        driver=chrome,
+        request_params_before=request_params_before,
+        request_params_after=request_params_after,
+    )
     parser.set_links(links=links)
     Message.success_message("Сбор ссылок авторов завершен.")
     result = parser.collect_links()
@@ -72,7 +85,7 @@ def collect_inventors_links(links: List[str], request_params: str, path_to_chrom
     parser.close_browser()
 
 
-def collect_patents_inventors_links(links: List[str], path_to_chrome_driver: str) -> None:
+def collect_patents_inventors_links(links: List[Dict], path_to_chrome_driver: str) -> None:
     Message.info_message("Сбор ссылок патентов авторов...")
     service = init_service(path_to_driver=path_to_chrome_driver)
     chrome = webdriver.Chrome(service=service)

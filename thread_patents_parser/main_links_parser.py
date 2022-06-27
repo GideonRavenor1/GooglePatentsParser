@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict
 from urllib.parse import urljoin
 
 from selenium import webdriver
@@ -17,7 +17,7 @@ class SeleniumMainLinksParser(SeleniumLinksParser):
         self._request = request
         self._main_links_list = []
 
-    def collect_links(self) -> List:
+    def collect_links(self) -> List[Dict]:
         self._follow_the_link(link=self.BASE_URL)
         self._fill_form(request=self._request)
         if not self._check_result():
@@ -34,8 +34,14 @@ class SeleniumMainLinksParser(SeleniumLinksParser):
         form.send_keys(Keys.ENTER)
         Message.info_message("Ввод запроса в форму...")
 
-    def _links_converter(self, data: List) -> List:
-        Message.info_message(f"Конвертация {len(data)} ссылок..")
-        list_link = list({urljoin(base=self.BASE_URL, url=url) for url in data})
+    def _links_converter(self, data: List[Dict]) -> List[Dict]:
+        Message.info_message(f"Конвертация основных ссылок: {len(data)}")
+        seen_links = set()
+        list_link = []
+        for element in data:
+            link = element["link"]
+            if link not in seen_links:
+                seen_links.add(link)
+                list_link.append({"link": urljoin(base=self.BASE_URL, url=element["link"])})
         Message.info_message(f"Всего уникальных ссылок: {len(list_link)}")
         return list_link

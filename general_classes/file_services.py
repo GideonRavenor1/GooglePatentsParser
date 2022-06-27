@@ -10,14 +10,10 @@ from general_classes.logger import Message
 from general_classes.type_annotations import State
 
 
-class LinksFileReader:
-    @staticmethod
-    def parse_txt_file(path_to_links: str) -> List:
-        with open(path_to_links, "r") as file:
-            return list(map(str.strip, file.readlines()))
+class LinksJsonFileReader:
 
     @staticmethod
-    def parse_json_file(path_to_links: str) -> List:
+    def parse_file(path_to_links: str) -> List:
         with open(path_to_links, "r", encoding="utf-8") as file:
             return json.load(file)
 
@@ -120,11 +116,11 @@ class XlsxFileWriter:
         Message.success_message(f"Запись данных в {self.PERSON} завершена.")
 
     @staticmethod
-    def zipped_files(dir_name: str) -> None:
-        if not os.listdir(f"./{dir_name}"):
+    def zipped_files(dir_name: str, zip_file_name: str) -> None:
+        if not os.listdir(dir_name):
             Message.warning_message(f"Директория {dir_name} пуста. Архивация невозможна")
         else:
-            zip_file_name = f"{dir_name}.zip"
+            zip_file_name = f"{zip_file_name}.zip"
             Message.info_message("Упаковываю файлы в архив...")
             wget = f"zip -r {zip_file_name} {dir_name}"
             os.system(wget)
@@ -136,11 +132,11 @@ class XlsxFileWriter:
 
     @staticmethod
     def delete_empty_directory(dir_name: str) -> None:
-        directories = os.listdir(f"./{dir_name}")
+        directories = os.listdir(dir_name)
         Message.info_message(f"Всего уникальных авторов: {len(directories)}")
         Message.info_message("Поиск пустых директорий...")
         empty_dirs = []
-        for ref, source, files in os.walk(f"./{dir_name}"):
+        for ref, source, files in os.walk(dir_name):
             if not files and not source and ref != ".":
                 empty_dirs.append(ref)
 

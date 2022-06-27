@@ -4,12 +4,13 @@ from enum import Enum
 class DirTypeEnum(Enum):
     TEMP_DIR = "/tmp/google_patents/"
     LINKS_DIR = "links"
+    RESULT_DIR = "result"
 
 
 class FileTypeEnum(Enum):
-    MAIN_TXT = "main_links.txt"
-    INVENTORS_TXT = "inventors.txt"
+    MAIN_JSON = "main_links.json"
     INVENTORS_JSON = "inventors.json"
+    PATENTS_JSON = "patents.json"
 
 
 class UniqueNames(Enum):

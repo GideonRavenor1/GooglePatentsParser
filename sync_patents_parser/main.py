@@ -9,16 +9,17 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 
 from general_classes.enums import DirTypeEnum, FileTypeEnum
-from general_classes.file_services import MakeDirManager, XlsxFileWriter, LinksFileReader
+from general_classes.file_services import MakeDirManager, XlsxFileWriter, LinksJsonFileReader
 from general_classes.logger import Message
-from sync_patents_parser.file_services import LinksFileWriter
+from sync_patents_parser.file_services import LinksJsonFileWriter
 from sync_patents_parser.selenium_multiparser import SeleniumMultiParser
 
-MAIN_TXT = FileTypeEnum.MAIN_TXT.value
-INVENTORS_TXT = FileTypeEnum.INVENTORS_TXT.value
+MAIN_JSON = FileTypeEnum.MAIN_JSON.value
 INVENTORS_JSON = FileTypeEnum.INVENTORS_JSON.value
+PATENTS_JSON = FileTypeEnum.PATENTS_JSON.value
 TEMP_DIR = DirTypeEnum.TEMP_DIR.value
 LINKS_DIR = DirTypeEnum.LINKS_DIR.value
+RESULT_DIR = DirTypeEnum.RESULT_DIR.value
 
 DEFAULT_KEYWORD_COUNT = 10
 REQUIRED_WORD = "assignee"
@@ -44,14 +45,16 @@ if __name__ == "__main__":
     min_keyword_count = input(
         f'Введите мин.количество ключевых слов на странице(по умолчанию {DEFAULT_KEYWORD_COUNT}): '
     )
-    result_dir_name = input('Введите желаемое название архива с результатом: ')
+    result_zip_file_name = input('Введите желаемое название архива с результатом: ')
 
     if REQUIRED_WORD not in request:
         Message.error_message(f"Неверный формат поискового запроса. Слово {REQUIRED_WORD} в запросе обязательно.")
         sys.exit()
 
-    request_params = request.split("assignee")[0].strip().replace(" ", "+")
-    classifications_code = re.search(r'[^(][a-zA-Z\d]+[^)]', request_params)
+    split_params = request.split(REQUIRED_WORD)
+    request_params_before = split_params[0].strip().replace(" ", "+")
+    request_params_after = split_params[1].strip().split(" ", maxsplit=1)[1].replace(" ", "+")
+    classifications_code = re.search(r'[^(][a-zA-Z\d]+[^)]', request_params_before)
 
     if not classifications_code:
         Message.error_message("Неверный формат поискового запроса. Не найден код классификатора")
@@ -70,33 +73,34 @@ if __name__ == "__main__":
         driver=chrome,
         tmp_dir=temporary_dir,
         request=request,
-        request_params=request_params,
+        request_params_before=request_params_before,
+        request_params_after=request_params_after,
         keyword=keyword,
         min_keyword_count=DEFAULT_KEYWORD_COUNT,
         valid_classifications_code=valid_classifications_code,
     )
     links_dir = dir_manager.make_link_dir(name=LINKS_DIR)
-    writer = LinksFileWriter(directory=links_dir)
-    reader = LinksFileReader()
+    writer = LinksJsonFileWriter(directory=links_dir)
+    reader = LinksJsonFileReader()
 
     try:
         list_main_links = parser.collect_main_links()
-        path_to_main_links = writer.write_links_to_txt_file(file_name=MAIN_TXT, data=list_main_links)
+        path_to_main_links = writer.write_links_to_file(file_name=MAIN_JSON, data=list_main_links)
         time.sleep(10)
 
-        main_links = reader.parse_txt_file(path_to_links=path_to_main_links)
+        main_links = reader.parse_file(path_to_links=path_to_main_links)
         parser.set_links(links=main_links)
         list_inventors_links = parser.collect_inventors_links()
-        path_to_inventors_links = writer.write_links_to_txt_file(file_name=INVENTORS_TXT, data=list_inventors_links)
+        path_to_inventors_links = writer.write_links_to_file(file_name=INVENTORS_JSON, data=list_inventors_links)
         time.sleep(10)
 
-        inventors_links = reader.parse_txt_file(path_to_links=path_to_inventors_links)
+        inventors_links = reader.parse_file(path_to_links=path_to_inventors_links)
         parser.set_links(links=inventors_links)
         list_patents_links = parser.collect_patents_inventors_links()
-        path_to_json_links = writer.write_links_to_json_file(file_name=INVENTORS_JSON, data=list_patents_links)
+        path_to_json_links = writer.write_links_to_file(file_name=PATENTS_JSON, data=list_patents_links)
         time.sleep(10)
 
-        patents_links = reader.parse_json_file(path_to_links=path_to_json_links)
+        patents_links = reader.parse_file(path_to_links=path_to_json_links)
         patents_links_len = len(patents_links)
         directory_name = dir_manager.make_result_dir(name=RESULT_DIR)
         for element in patents_links:
@@ -114,9 +118,9 @@ if __name__ == "__main__":
             writer.execute_write()
             patents_links_len -= 1
 
-        writer.delete_empty_directory(dir_name=result_dir_name)
+        writer.delete_empty_directory(dir_name=RESULT_DIR)
         time.sleep(5)
-        writer.zipped_files(dir_name=result_dir_name)
+        writer.zipped_files(dir_name=RESULT_DIR, zip_file_name=result_zip_file_name)
     except FileExistsError as Error:
         Message.error_message(f"Ошибка в работе программы. Ошибка: {Error}.")
     finally:

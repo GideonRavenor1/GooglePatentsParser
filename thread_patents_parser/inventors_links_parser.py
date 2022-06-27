@@ -1,6 +1,6 @@
 import time
 from random import randint
-from typing import List
+from typing import List, Dict
 from urllib.parse import urljoin
 
 from selenium import webdriver
@@ -14,14 +14,16 @@ from thread_patents_parser.base import SeleniumLinksParser
 
 class SeleniumInventorsLinksParser(SeleniumLinksParser):
 
-    def __init__(self, driver: webdriver.Chrome, request_param: str) -> None:
+    def __init__(self, driver: webdriver.Chrome, request_params_before: str, request_params_after: str) -> None:
         super().__init__(driver)
         self._inventors_links_list = []
-        self._request_params = request_param
+        self._request_params_before = request_params_before
+        self._request_params_after = request_params_after.replace(",", "%2C")
 
     def collect_links(self) -> List:
         len_inventors_links = len(self._links)
-        for link in self._links:
+        for element in self._links:
+            link = element["link"]
             Message.info_message(f"Осталось спарсить ссылок: {len_inventors_links}")
             Message.info_message(f"Текущая ссылка: {link}")
             self._follow_the_link(link=link)
@@ -45,11 +47,13 @@ class SeleniumInventorsLinksParser(SeleniumLinksParser):
         inventors = []
         for element in people_section:
             if self._check_inventor_element(element=element):
-                inv_name = element.text.replace(",", "%2C").replace(" ", "+")
+                name = element.text
+                inv_name = name.replace(",", "%2C").replace(" ", "+")
                 query = (
-                    f"?q={self._request_params}&inventor={inv_name}&oq={self._request_params}+inventor:({inv_name}))"
+                    f"?q={self._request_params_before}&inventor={inv_name}&{self._request_params_after}"
+                    f"&oq={self._request_params_before}+inventor:({inv_name})+{self._request_params_after})"
                 )
-                inventors.append(query)
+                inventors.append({"name": name.replace(" ", "_"), "query": query})
                 Message.info_message(f"Сгенерированный Query-запрос: {query}")
         if not inventors:
             Message.warning_message(f"Авторы не найдены. Query-запросы не сгенерированы. URL: {link}")
@@ -57,9 +61,12 @@ class SeleniumInventorsLinksParser(SeleniumLinksParser):
             self._inventors_links_list.extend(inventors)
             Message.success_message("Сгенерированные Query-запросы с авторами добавлены в буфер.")
 
-    def _links_converter(self, data: List) -> List:
+    def _links_converter(self, data: List[Dict]) -> List[Dict]:
         Message.info_message(f"Конвертация {len(data)} ссылок..")
-        list_link = [urljoin(base=self.BASE_URL, url=url) for url in data]
+        list_link = [
+            {"name": element["name"], "link": urljoin(base=self.BASE_URL, url=element["query"])}
+            for element in data
+        ]
         Message.info_message(f"Всего ссылок: {len(data)}")
         return list_link
 

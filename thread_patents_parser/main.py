@@ -6,19 +6,20 @@ from datetime import datetime
 from typing import List, Callable
 
 from general_classes.enums import DirTypeEnum, FileTypeEnum
-from general_classes.file_services import MakeDirManager, XlsxFileWriter, LinksFileReader
+from general_classes.file_services import MakeDirManager, XlsxFileWriter, LinksJsonFileReader
 from general_classes.logger import Message
-from thread_patents_parser.file_services import LinksFileWriter
+from thread_patents_parser.file_services import LinksJsonFileWriter
 from thread_patents_parser.functions_performed import (
     divide_into_parts, RESULT_ARRAY, validate_urls, collect_inventors_links,
     collect_patents_inventors_links, collect_main_links, collect_patent,
 )
 
-MAIN_TXT = FileTypeEnum.MAIN_TXT.value
-INVENTORS_TXT = FileTypeEnum.INVENTORS_TXT.value
+MAIN_JSON = FileTypeEnum.MAIN_JSON.value
 INVENTORS_JSON = FileTypeEnum.INVENTORS_JSON.value
+PATENTS_JSON = FileTypeEnum.PATENTS_JSON.value
 TEMP_DIR = DirTypeEnum.TEMP_DIR.value
 LINKS_DIR = DirTypeEnum.LINKS_DIR.value
+RESULT_DIR = DirTypeEnum.RESULT_DIR.value
 
 DEFAULT_THREADS_COUNT = 8
 DEFAULT_KEYWORD_COUNT = 10
@@ -56,15 +57,17 @@ if __name__ == '__main__':
         Message.error_message(f"Неверный формат поискового запроса. Слово {REQUIRED_WORD} в запросе обязательно.")
         sys.exit()
 
-    request_params = request.split("assignee")[0].strip().replace(" ", "+")
-    classifications_code = re.search(r'[^(][a-zA-Z\d]+[^)]', request_params)
+    split_params = request.split(REQUIRED_WORD)
+    request_params_before = split_params[0].strip().replace(" ", "+")
+    request_params_after = split_params[1].strip().split(" ", maxsplit=1)[1].replace(" ", "+")
+    classifications_code = re.search(r'[^(][a-zA-Z\d]+[^)]', request_params_before)
 
     if not classifications_code:
         Message.error_message("Неверный формат поискового запроса. Не найден код классификатора")
         sys.exit()
 
     threads_count = input(f'Введите желаемое количество потоков(по умолчанию {DEFAULT_THREADS_COUNT}): ')
-    result_dir_name = input('Введите желаемое название архива с результатом: ')
+    result_zip_file_name = input('Введите желаемое название архива с результатом: ')
 
     start_time = datetime.now()
 
@@ -81,25 +84,31 @@ if __name__ == '__main__':
             path_to_chrome_driver=path_to_chrome_driver,
             request=request,
             directory=links_dir,
-            file_name=MAIN_TXT
+            file_name=MAIN_JSON
         )
         time.sleep(10)
 
-        main_links = LinksFileReader.parse_txt_file(path_to_links=path_to_main_links)
-        execute_threading_command(collect_inventors_links, main_links, request_params, path_to_chrome_driver)
+        main_links = LinksJsonFileReader.parse_file(path_to_links=path_to_main_links)
+        execute_threading_command(
+            collect_inventors_links,
+            main_links,
+            request_params_before,
+            request_params_after,
+            path_to_chrome_driver,
+        )
         valid_urls = validate_urls(array=RESULT_ARRAY)
-        path_to_inventors_links = LinksFileWriter.write_links_to_txt_file(
-            file_name=INVENTORS_TXT,
+        path_to_inventors_links = LinksJsonFileWriter.write_links_to_file(
+            file_name=INVENTORS_JSON,
             data=valid_urls,
             directory=links_dir
         )
         RESULT_ARRAY.clear()
         time.sleep(10)
 
-        inventors_links = LinksFileReader.parse_txt_file(path_to_links=path_to_inventors_links)
+        inventors_links = LinksJsonFileReader.parse_file(path_to_links=path_to_inventors_links)
         execute_threading_command(collect_patents_inventors_links, inventors_links, path_to_chrome_driver)
-        path_to_json_links = LinksFileWriter.write_links_to_json_file(
-            file_name=INVENTORS_JSON,
+        path_to_json_links = LinksJsonFileWriter.write_links_to_file(
+            file_name=PATENTS_JSON,
             data=RESULT_ARRAY,
             directory=links_dir,
         )
@@ -107,7 +116,7 @@ if __name__ == '__main__':
         RESULT_ARRAY.clear()
         time.sleep(10)
 
-        patents_links = LinksFileReader.parse_json_file(path_to_links=path_to_json_links)
+        patents_links = LinksJsonFileReader.parse_file(path_to_links=path_to_json_links)
         result_dir_name = dir_manager.make_result_dir(name=RESULT_DIR)
         execute_threading_command(
             collect_patent,
@@ -120,9 +129,9 @@ if __name__ == '__main__':
             DEFAULT_KEYWORD_COUNT,
         )
 
-        XlsxFileWriter.delete_empty_directory(dir_name=result_dir_name)
+        XlsxFileWriter.delete_empty_directory(dir_name=RESULT_DIR)
         time.sleep(5)
-        XlsxFileWriter.zipped_files(dir_name=result_dir_name)
+        XlsxFileWriter.zipped_files(dir_name=RESULT_DIR, zip_file_name=result_zip_file_name)
     except (FileNotFoundError, KeyError, IndexError, TypeError) as Error:
         Message.error_message(f"Ошибка в работе программы. Ошибка: {Error}.")
     finally:

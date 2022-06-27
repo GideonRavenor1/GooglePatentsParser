@@ -1,6 +1,6 @@
 import random
 import time
-from typing import List
+from typing import List, Dict
 from urllib.parse import urljoin
 
 from selenium import webdriver
@@ -28,11 +28,13 @@ class SeleniumMultiParser(SeleniumParser):
         min_keyword_count: int,
         valid_classifications_code: str,
         request: str,
-        request_params: str
+        request_params_before: str,
+        request_params_after: str
     ) -> None:
         super().__init__(driver, tmp_dir, keyword, min_keyword_count, valid_classifications_code)
         self._request = request
-        self._request_params = request_params
+        self._request_params_before = request_params_before
+        self._request_params_after = request_params_after.replace(",", "%2C")
         self._main_links_list = []
         self._inventors_links_list = []
         self._json_element = JsonDict()
@@ -44,13 +46,26 @@ class SeleniumMultiParser(SeleniumParser):
         if not self._check_result():
             raise ValueError("Ошибка. Результатов по введённому запросу не найдено")
         self._add_links_to_list(list_=self._main_links_list, all_result=True)
-        valid_links = self._links_converter(data=self._main_links_list)
+        valid_links = self._main_links_converter(data=self._main_links_list)
         self._main_links_list.clear()
         return valid_links
 
+    def _main_links_converter(self, data: List[Dict]) -> List[Dict]:
+        Message.info_message(f"Конвертация основных ссылок: {len(data)}")
+        seen_links = set()
+        list_link = []
+        for element in data:
+            link = element["link"]
+            if link not in seen_links:
+                seen_links.add(link)
+                list_link.append({"link": urljoin(base=self.BASE_URL, url=element["link"])})
+        Message.info_message(f"Всего уникальных ссылок: {len(list_link)}")
+        return list_link
+
     def collect_inventors_links(self) -> List:
         len_inventors_links = len(self._links)
-        for link in self._links:
+        for element in self._links:
+            link = element["link"]
             Message.info_message(f"Осталось спарсить ссылок: {len_inventors_links}")
             Message.info_message(f"Текущая ссылка: {link}")
             self._follow_the_link(link=link)
@@ -58,22 +73,34 @@ class SeleniumMultiParser(SeleniumParser):
             if len_inventors_links % 10 == 0:
                 time.sleep(random.randint(5, 10))
             len_inventors_links -= 1
-        valid_links = self._links_converter(data=self._inventors_links_list, case_ignore=True)
+        valid_links = self._inventors_links_converter(data=self._inventors_links_list)
         self._inventors_links_list.clear()
         return valid_links
 
+    def _inventors_links_converter(self, data: List[Dict]) -> List[Dict]:
+        Message.info_message(f"Конвертация ссылок на авторов: {len(data)}")
+        seen_links = set()
+        validate_links = []
+        for element in data:
+            query = element["query"]
+            lower_query = query.lower()
+            if lower_query not in seen_links:
+                seen_links.add(lower_query)
+                validate_links.append(element)
+        list_link = [
+            {"name": element["name"], "link": urljoin(base=self.BASE_URL, url=element["query"])}
+            for element in validate_links
+        ]
+        return list_link
+
     def collect_patents_inventors_links(self) -> List[JsonDict]:
         len_patents_links = len(self._links)
-        for link in self._links:
+        for element in self._links:
+            link = element["link"]
+            inventor = element["name"]
             Message.info_message(f"Осталось спарсить ссылок: {len_patents_links}")
             Message.info_message(f"Текущая ссылка: {link}")
             self._follow_the_link(link=link)
-            inventor = (
-                link.split("inventor")[2]
-                .strip(":()")
-                .replace("+", "_")
-                .replace("%2C", "")
-            )
             len_patents_links -= 1
             if not self._check_result():
                 Message.warning_message(f"Патенты у автора {inventor} не найдена")
@@ -81,7 +108,7 @@ class SeleniumMultiParser(SeleniumParser):
             self._json_element["name"] = inventor
             self._json_element["links"] = []
             self._add_links_to_list(list_=self._json_element["links"])
-            valid_links = self._links_converter(data=self._json_element["links"])
+            valid_links = self._patents_links_converter(data=self._json_element["links"])
             self._json_element["links"] = valid_links
             copy_element = self._json_element.copy()
             self._patents_links_list.append(copy_element)
@@ -107,7 +134,7 @@ class SeleniumMultiParser(SeleniumParser):
                 by=By.XPATH, value=SearchItems.result_items.value
             )
             links_to_str = [
-                element.get_attribute("data-result") for element in links_elements
+                {"link": element.get_attribute("data-result")} for element in links_elements
             ]
             len_links_to_str = len(links_to_str)
             total_added += len_links_to_str
@@ -132,16 +159,9 @@ class SeleniumMultiParser(SeleniumParser):
         max_result_button = self._driver.find_element(by=By.XPATH, value=SearchItems.one_hundred_results_per_page.value)
         self._driver.execute_script("arguments[0].click();", max_result_button)
 
-    def _links_converter(self, data: List, case_ignore: bool = False) -> List:
-        Message.info_message(f"Конвертация {len(data)} ссылок..")
-        if case_ignore:
-            seen_links = {}
-            validate_links = [
-                seen_links.setdefault(link.lower(), link) for link in data if link.lower() not in seen_links
-            ]
-            list_link = [urljoin(base=self.BASE_URL, url=url) for url in validate_links]
-        else:
-            list_link = list({urljoin(base=self.BASE_URL, url=url) for url in data})
+    def _patents_links_converter(self, data: List) -> List:
+        Message.info_message(f"Конвертация ссылок на патенты: {len(data)}")
+        list_link = list({urljoin(base=self.BASE_URL, url=element["link"]) for element in data})
         Message.info_message(f"Всего уникальных ссылок: {len(list_link)}")
         return list_link
 
@@ -178,11 +198,13 @@ class SeleniumMultiParser(SeleniumParser):
         inventors = []
         for element in people_section:
             if self._check_inventor_element(element=element):
-                inv_name = element.text.replace(",", "%2C").replace(" ", "+")
+                name = element.text
+                inv_name = name.replace(",", "%2C").replace(" ", "+")
                 query = (
-                    f"?q={self._request_params}&inventor={inv_name}&oq={self._request_params}+inventor:({inv_name}))"
+                    f"?q={self._request_params_before}&inventor={inv_name}&{self._request_params_after}"
+                    f"&oq={self._request_params_before}+inventor:({inv_name})+{self._request_params_after})"
                 )
-                inventors.append(query)
+                inventors.append({"name": name.replace(" ", "_"), "query": query})
                 Message.info_message(f"Сгенерированный Query-запрос: {query}")
         if not inventors:
             Message.warning_message(f"Авторы не найдены. Query-запросы не сгенерированы. URL: {link}")

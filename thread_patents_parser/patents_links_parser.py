@@ -27,16 +27,12 @@ class SeleniumPatentsInventorsLinksParser(SeleniumLinksParser):
 
     def collect_links(self) -> List[JsonDict]:
         len_patents_links = len(self._links)
-        for link in self._links:
+        for element in self._links:
+            link = element["link"]
+            inventor = element["name"]
             Message.info_message(f"Осталось спарсить ссылок: {len_patents_links}")
             Message.info_message(f"Текущая ссылка: {link}")
             self._follow_the_link(link=link)
-            inventor = (
-                link.split("inventor")[2]
-                .strip(":()")
-                .replace("+", "_")
-                .replace("%2C", "")
-            )
             len_patents_links -= 1
             if not self._check_result():
                 Message.warning_message(f"Патенты у автора {inventor} не найдена")
@@ -52,7 +48,7 @@ class SeleniumPatentsInventorsLinksParser(SeleniumLinksParser):
 
     def _links_converter(self, data: List) -> List:
         Message.info_message(f"Конвертация {len(data)} ссылок..")
-        list_link = list({urljoin(base=self.BASE_URL, url=url) for url in data})
+        list_link = list({urljoin(base=self.BASE_URL, url=element["link"]) for element in data})
         Message.info_message(f"Всего уникальных ссылок: {len(list_link)}")
         return list_link
 
@@ -135,7 +131,7 @@ class SeleniumPatentsParser(SeleniumBaseParser):
             Message.warning_message(f'Коды патентных классификаторов не найдены. URL: {self._state["link"]}')
         else:
             self._state["classification_codes"] = ", ".join(codes)
-            Message.success_message(f" Кода патентного классификатора сохранены.")
+            Message.success_message("Кода патентного классификатора сохранены.")
 
     def _validate_patent(self, list_of_code: List[str]) -> None:
         Message.info_message(f' Проверка валидности патента...')
@@ -282,7 +278,7 @@ class SeleniumPatentsParser(SeleniumBaseParser):
         LOCK.acquire()
         if link is None:
             Message.warning_message(f'Ссылка для скачивания PDF не найдена. URL: {self._state["link"]}')
-            Message.info_message(f" Скачивание html файла...")
+            Message.info_message("Скачивание html файла...")
             html = self._driver.page_source
             target = os.path.join(patent_dir, f"{self._state['patent_code']}.html")
             with open(target, "w", encoding="utf-8") as file:
