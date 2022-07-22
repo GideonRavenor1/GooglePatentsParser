@@ -3,7 +3,6 @@ import re
 import threading
 from datetime import datetime
 from typing import List
-from urllib.parse import urljoin
 
 from selenium import webdriver
 from selenium.common import NoSuchElementException
@@ -12,45 +11,10 @@ from selenium.webdriver.remote.webelement import WebElement
 
 from general_classes.enums import XpathRightPartElements, UniqueNames, XpathIdElements
 from general_classes.logger import Message
-from general_classes.type_annotations import JsonDict, State
-from thread_patents_parser.base import SeleniumLinksParser, SeleniumBaseParser
+from general_classes.type_annotations import State
+from thread_patents_parser.base import SeleniumBaseParser
 
 LOCK = threading.Lock()
-
-
-class SeleniumPatentsInventorsLinksParser(SeleniumLinksParser):
-
-    def __init__(self, driver: webdriver.Chrome):
-        super().__init__(driver)
-        self._json_element = JsonDict()
-        self._patents_links_list = []
-
-    def collect_links(self) -> List[JsonDict]:
-        len_patents_links = len(self._links)
-        for element in self._links:
-            link = element["link"]
-            inventor = element["name"]
-            Message.info_message(f"Осталось спарсить ссылок: {len_patents_links}")
-            Message.info_message(f"Текущая ссылка: {link}")
-            self._follow_the_link(link=link)
-            len_patents_links -= 1
-            if not self._check_result():
-                Message.warning_message(f"Патенты у автора {inventor} не найдена")
-                continue
-            self._json_element["name"] = inventor
-            self._json_element["links"] = []
-            self._add_links_to_list(list_=self._json_element["links"])
-            valid_links = self._links_converter(data=self._json_element["links"])
-            self._json_element["links"] = valid_links
-            copy_element = self._json_element.copy()
-            self._patents_links_list.append(copy_element)
-        return self._patents_links_list
-
-    def _links_converter(self, data: List) -> List:
-        Message.info_message(f"Конвертация {len(data)} ссылок..")
-        list_link = list({urljoin(base=self.BASE_URL, url=element["link"]) for element in data})
-        Message.info_message(f"Всего уникальных ссылок: {len(list_link)}")
-        return list_link
 
 
 class SeleniumPatentsParser(SeleniumBaseParser):
@@ -59,18 +23,13 @@ class SeleniumPatentsParser(SeleniumBaseParser):
         self,
         driver: webdriver.Chrome,
         tmp_dir: str,
-        valid_classifications_code: str,
-        keyword: str,
-        min_keyword_count: int
+        name: str
     ) -> None:
         super().__init__(driver)
         self._tmp_dir = tmp_dir
-        self._valid_classifications_code = valid_classifications_code
-        self._keyword = keyword
-        self._min_keyword_count = min_keyword_count
         self._state = State()
         self._url_regex = re.compile(r"^(http|https)://([\w.]+/?)\S*$")
-        self._result_list = []
+        self._inventor_name = name
 
     def parse_patents_links(self, patent_dir: str) -> None:
         for link in self._links:
@@ -92,12 +51,11 @@ class SeleniumPatentsParser(SeleniumBaseParser):
             self._find_publication_date()
             self._find_abstract()
             self._download_pdf_file(patent_dir=patent_dir)
-            self._add_state_to_result_list()
 
-    def get_state(self) -> List[State]:
+    def get_state(self) -> State:
         Message.info_message("Выгружается стейт...")
-        copy_state = self._result_list.copy()
-        self._result_list.clear()
+        copy_state = self._state.copy()
+        self._state.clear()
         return copy_state
 
     def _click_to_more_button(self) -> None:
@@ -125,38 +83,12 @@ class SeleniumPatentsParser(SeleniumBaseParser):
             by=By.XPATH, value=XpathIdElements.classification_element_codes.value
         )
         codes = [i.text for i in find_code_elements if i.text]
-        self._validate_patent(list_of_code=codes)
         if not codes:
             self._state["classification_codes"] = ""
             Message.warning_message(f'Коды патентных классификаторов не найдены. URL: {self._state["link"]}')
         else:
             self._state["classification_codes"] = ", ".join(codes)
             Message.success_message("Кода патентного классификатора сохранены.")
-
-    def _validate_patent(self, list_of_code: List[str]) -> None:
-        Message.info_message(f' Проверка валидности патента...')
-        check_valid_code = [True if self._valid_classifications_code in code else False for code in list_of_code]
-        if any(check_valid_code):
-            Message.success_message(
-                f"Патент прошел проверку. Найден ключевой классификатор: {self._valid_classifications_code}"
-            )
-            ...
-        else:
-            Message.warning_message(f"Не найден ключевой классификатор: {self._valid_classifications_code}")
-            html = self._driver.find_element(by=By.TAG_NAME, value='html').text
-            count_keywords = len(re.findall(self._keyword, html, flags=re.IGNORECASE))
-            valid_flag = count_keywords >= self._min_keyword_count
-            if not valid_flag:
-                Message.warning_message(
-                    f"Недостаточно ключевых слов в патенте. Найдено: {count_keywords}. "
-                    f"Мин.значение: {self._min_keyword_count}. "
-                    f'Патент записан не будет. URL: {self._state["link"]}'
-                )
-                raise ValueError
-            Message.success_message(
-                f"Патент прошел проверку. Найдено ключевых слов: {count_keywords}. "
-                f"Мин.значение: {self._min_keyword_count}."
-            )
 
     def _find_title(self) -> None:
         try:
@@ -298,7 +230,3 @@ class SeleniumPatentsParser(SeleniumBaseParser):
         Message.info_message("Загрузка файла...")
         wget = f"wget -P {self._tmp_dir} {link} -q"
         os.system(wget)
-
-    def _add_state_to_result_list(self) -> None:
-        copy_state = self._state.copy()
-        self._result_list.append(copy_state)

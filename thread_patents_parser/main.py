@@ -14,12 +14,12 @@ from thread_patents_parser.functions_performed import (
     collect_patents_inventors_links, collect_main_links, collect_patent,
 )
 
-MAIN_JSON = FileTypeEnum.MAIN_JSON.value
-INVENTORS_JSON = FileTypeEnum.INVENTORS_JSON.value
-PATENTS_JSON = FileTypeEnum.PATENTS_JSON.value
-TEMP_DIR = DirTypeEnum.TEMP_DIR.value
-LINKS_DIR = DirTypeEnum.LINKS_DIR.value
-RESULT_DIR = DirTypeEnum.RESULT_DIR.value
+MAIN_JSON: str = FileTypeEnum.MAIN_JSON.value
+INVENTORS_JSON: str = FileTypeEnum.INVENTORS_JSON.value
+PATENTS_JSON: str = FileTypeEnum.PATENTS_JSON.value
+TEMP_DIR: str = DirTypeEnum.TEMP_DIR.value
+LINKS_DIR: str = DirTypeEnum.LINKS_DIR.value
+RESULT_DIR: str = DirTypeEnum.RESULT_DIR.value
 
 DEFAULT_THREADS_COUNT = 8
 DEFAULT_KEYWORD_COUNT = 10
